@@ -110,14 +110,15 @@ async def _finish(client, uid, message):
     )
     db.log(uid, "batch_done", f"code={code} n={len(ids)}")
 
-    try:
-        await client.send_message(
-            config.LOG_CHANNEL,
-            f"◆ <b>ɴᴇᴡ ʙᴀᴛᴄʜ</b>\nʙʏ: <code>{uid}</code>\n"
-            f"ғɪʟᴇs: <code>{len(ids)}</code>\nᴄᴏᴅᴇ: <code>{code}</code>",
-        )
-    except Exception:
-        pass
+    if config.LOG_FILES:
+        try:
+            await client.send_message(
+                config.LOG_CHANNEL,
+                f"◆ <b>ɴᴇᴡ ʙᴀᴛᴄʜ</b>\nʙʏ: <code>{uid}</code>\n"
+                f"ғɪʟᴇs: <code>{len(ids)}</code>\nᴄᴏᴅᴇ: <code>{code}</code>",
+            )
+        except Exception:
+            pass
 
 
 # ───────────────────────────── MEDIA COLLECT ─────────────────────────────

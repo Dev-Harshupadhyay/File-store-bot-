@@ -19,7 +19,24 @@ from utils.helpers import human_time, no_preview, progress_bar
 log = logging.getLogger("start")
 
 
-async def _auto_delete(client, chat_id, msg_ids, delay, count):
+async def _log_new_user(client, user):
+    """Naya user start kare to log channel me — id + username tag."""
+    tag = f"@{user.username}" if user.username else "—"
+    try:
+        await client.send_message(
+            config.LOG_CHANNEL,
+            f"<b>👤 ɴᴇᴡ ᴜsᴇʀ sᴛᴀʀᴛᴇᴅ ʙᴏᴛ</b>\n{T.LINE}\n"
+            f"◉ ɴᴀᴍᴇ: {user.mention}\n"
+            f"◆ ɪᴅ: <code>{user.id}</code>\n"
+            f"❖ ᴜsᴇʀɴᴀᴍᴇ: {tag}\n"
+            f"▪️ ᴛᴏᴛᴀʟ ᴜsᴇʀs: <code>{db.count_users()}</code>\n{T.LINE}",
+            **no_preview(),
+        )
+    except Exception as e:
+        log.warning("new user log fail: %s", e)
+
+
+async def _auto_delete(client, chat_id, msg_ids, delay, count, link=""):
     """Delay ke baad saari files delete + notice."""
     await asyncio.sleep(delay)
     deleted = 0
@@ -33,7 +50,7 @@ async def _auto_delete(client, chat_id, msg_ids, delay, count):
         await client.send_message(
             chat_id,
             T.DELETED.format(line=T.LINE, n=deleted),
-            reply_markup=kb.get_again_kb(),
+            reply_markup=kb.get_again_kb(link),
         )
     except Exception:
         pass
@@ -112,25 +129,35 @@ async def deliver_batch(client, message, code, override_user=None):
         warn = await client.send_message(
             user_id,
             T.DELETE_WARN.format(line=T.LINE, n=len(sent_ids), ad=human_time(delay)),
+            reply_markup=kb.delete_warn_kb(),
+            **no_preview(),
         )
+        again = f"https://t.me/{client.username}?start={code}"
         asyncio.create_task(
-            _auto_delete(client, user_id, sent_ids + [warn.id], delay, len(sent_ids))
+            _auto_delete(client, user_id, sent_ids + [warn.id], delay,
+                         len(sent_ids), again)
         )
 
-    try:
-        await client.send_message(
-            config.LOG_CHANNEL,
-            f"◉ <b>ғɪʟᴇs sᴇɴᴛ</b>\nᴜsᴇʀ: <code>{user_id}</code>\n"
-            f"ᴄᴏᴅᴇ: <code>{code}</code> · ɴ: <code>{len(sent_ids)}</code>",
-        )
-    except Exception:
-        pass
+    if config.LOG_FILES:
+        try:
+            await client.send_message(
+                config.LOG_CHANNEL,
+                f"◉ <b>ғɪʟᴇs sᴇɴᴛ</b>\nᴜsᴇʀ: <code>{user_id}</code>\n"
+                f"ᴄᴏᴅᴇ: <code>{code}</code> · ɴ: <code>{len(sent_ids)}</code>",
+            )
+        except Exception:
+            pass
 
 
 @Client.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, message: Message):
     user = message.from_user
+
+    # pehli baar aaya? -> admin panel/log channel me notify
+    is_new = db.get_user(user.id) is None
     db.add_user(user.id, user.first_name or "", user.username or "")
+    if is_new and config.LOG_NEW_USER:
+        asyncio.create_task(_log_new_user(client, user))
 
     if db.is_banned(user.id):
         row = db.get_user(user.id)

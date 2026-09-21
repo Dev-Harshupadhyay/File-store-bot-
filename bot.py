@@ -138,19 +138,75 @@ class FileStoreBot(Client):
         except Exception as e:
             log.warning("colour setup skip: %s", e)
 
+        # ── force sub channels env se seed (volume na ho to DB reset ho
+        #    jata hai — isliye har start pe dobara daal dete hain) ──
+        await self._seed_fsub()
+
         log.info("🤖 @%s live · data dir: %s", self.username, config.DATA_DIR)
 
-        try:
-            import database as db
-            await self.send_message(
-                config.LOG_CHANNEL,
-                f"<b>🤖 {config.BOT_NAME} {config.BOT_VERSION} sᴛᴀʀᴛᴇᴅ</b>\n"
-                f"◉ ᴜsᴇʀs: <code>{db.count_users()}</code>\n"
-                f"◆ ʙᴀᴛᴄʜᴇs: <code>{db.count_batches()}</code>\n"
-                f"▪️ sᴛᴏʀᴀɢᴇ: <code>{config.DATA_DIR}</code>",
-            )
-        except Exception:
-            pass
+        # startup log sirf tab jab LOG_STARTUP=true ho (default off)
+        if config.LOG_STARTUP:
+            try:
+                import database as db
+                await self.send_message(
+                    config.LOG_CHANNEL,
+                    f"<b>🤖 {config.BOT_NAME} {config.BOT_VERSION} sᴛᴀʀᴛᴇᴅ</b>\n"
+                    f"◉ ᴜsᴇʀs: <code>{db.count_users()}</code>\n"
+                    f"◆ ʙᴀᴛᴄʜᴇs: <code>{db.count_batches()}</code>\n"
+                    f"▪️ sᴛᴏʀᴀɢᴇ: <code>{config.DATA_DIR}</code>",
+                )
+            except Exception:
+                pass
+
+    async def _seed_fsub(self):
+        """FSUB_CHANNELS env var se force sub channels register karo."""
+        if not config.FSUB_CHANNELS:
+            return
+        import database as db
+        from pyrogram.enums import ChatMemberStatus
+
+        added = 0
+        for raw in config.FSUB_CHANNELS:
+            mode = "join"
+            if ":" in raw and not raw.startswith("@"):
+                raw, _, m = raw.partition(":")
+                mode = "request" if m.lower().startswith("req") else "join"
+            target = raw if raw.startswith("@") else int(raw)
+
+            try:
+                chat = await self.get_chat(target)
+                me = await self.get_chat_member(chat.id, "me")
+                if me.status not in (ChatMemberStatus.ADMINISTRATOR,
+                                     ChatMemberStatus.OWNER):
+                    log.warning("⚑ fsub skip %s — bot admin nahi hai", raw)
+                    continue
+
+                invite = ""
+                if getattr(chat, "username", None):
+                    invite = f"https://t.me/{chat.username}"
+                else:
+                    old = db.get_fsub(chat.id)
+                    invite = (old["invite"] if old else "") or ""
+                    if not invite:
+                        try:
+                            lnk = await self.create_chat_invite_link(
+                                chat.id,
+                                creates_join_request=(mode == "request"),
+                                name=f"FSub {config.BOT_NAME[:16]}")
+                            invite = lnk.invite_link
+                        except Exception as e:
+                            log.warning("⚑ fsub invite fail %s: %s", raw, e)
+                            continue
+
+                db.add_fsub(chat.id, chat.title or str(chat.id), invite, mode)
+                added += 1
+                log.info("⚑ fsub ready: %s (%s) mode=%s", chat.title, chat.id, mode)
+            except Exception as e:
+                log.warning("⚑ fsub seed fail %s: %s", raw, e)
+
+        if added:
+            db.set("force_sub", "1")
+            log.info("⚑ force sub ON · %d channel(s)", added)
 
     async def stop(self, *args, **kwargs):
         try:

@@ -69,7 +69,18 @@ PORT = _int("PORT", 8080)                     # Railway health check
 
 START_PHOTO = os.environ.get("START_PHOTO", "")
 SUPPORT_LINK = os.environ.get("SUPPORT_LINK", "")
-UPDATES_LINK = os.environ.get("UPDATES_LINK", "")
+UPDATES_LINK = os.environ.get("UPDATES_LINK", "https://t.me/pm_harsh")
+
+# ── force sub channels env se (volume na ho to DB reset ho jata hai,
+#    isliye har start pe ye channels dobara seed ho jate hain) ──
+#    FSUB_CHANNELS="-1002644259946,-1001234567890:request,@mychannel"
+FSUB_CHANNELS = [c.strip() for c in
+                 os.environ.get("FSUB_CHANNELS", "").split(",") if c.strip()]
+
+# ── logging (LOG_CHANNEL me kya kya jaye) ──
+LOG_STARTUP = _bool("LOG_STARTUP", False)     # "bot started" message
+LOG_NEW_USER = _bool("LOG_NEW_USER", True)    # naya user aaya
+LOG_FILES = _bool("LOG_FILES", False)         # har delivery / batch
 
 
 def validate():

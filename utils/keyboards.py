@@ -8,6 +8,7 @@ Colour scheme (screenshot jaisa):
 """
 from pyrogram.types import InlineKeyboardMarkup as IKM
 
+import config
 import database as db
 from utils.buttons import blue, green, grey, red
 from utils.fonts import tc
@@ -147,7 +148,6 @@ def fsub_kb():
 
 def admins_kb():
     _sync_colors()
-    import config
     rows = []
     for uid in db.admin_ids():
         if uid == config.OWNER_ID:
@@ -180,7 +180,6 @@ def link_kb(link, code):
 # ───────────────────────────── USER SIDE ─────────────────────────────
 def start_kb(is_adm=False):
     _sync_colors()
-    import config
     rows = [[blue(f"◈ {tc('How To Use')}", callback_data="u:help"),
              blue(f"◉ {tc('About')}", callback_data="u:about")],
             [green(f"👨‍💻 {tc('Developer')}", callback_data="u:dev")]]
@@ -224,7 +223,30 @@ def close_only():
     return IKM([[red(f"✕ {tc('Close')}", callback_data="ap:close")]])
 
 
-def get_again_kb():
-    """Auto-delete ke baad 'dobara chahiye' button."""
+def delete_warn_kb():
+    """30-min delete warning ke saath — updates channel + support."""
     _sync_colors()
-    return IKM([[green(f"↻ {tc('Get Files Again')}", callback_data="noop")]])
+    rows = []
+    line = []
+    if config.UPDATES_LINK:
+        line.append(blue(f"📢 {tc('Updates Channel')}", url=config.UPDATES_LINK))
+    if line:
+        rows.append(line)
+    if config.SUPPORT_LINK:
+        rows.append([green(f"✿ {tc('Support')}", url=config.SUPPORT_LINK)])
+    if not rows:
+        rows.append([grey(f"▪️ {tc('Save Files Now')}", callback_data="noop")])
+    return IKM(rows)
+
+
+def get_again_kb(link=""):
+    """Auto-delete ke baad — dobara link kholne ka button + updates."""
+    _sync_colors()
+    rows = []
+    if link:
+        rows.append([green(f"↻ {tc('Get Files Again')}", url=link)])
+    if config.UPDATES_LINK:
+        rows.append([blue(f"📢 {tc('Updates Channel')}", url=config.UPDATES_LINK)])
+    if not rows:
+        rows.append([grey(f"▪️ {tc('Link dobara kholo')}", callback_data="noop")])
+    return IKM(rows)
