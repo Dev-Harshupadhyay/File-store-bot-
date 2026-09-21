@@ -2,7 +2,6 @@
 Admin commands — /panel /stats /ban /broadcast /addadmin /autodel /backup ...
 """
 import asyncio
-import io
 import logging
 import os
 import time

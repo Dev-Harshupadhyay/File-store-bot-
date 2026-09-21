@@ -2,7 +2,6 @@
 Harsh File Store Bot — main client
 Railway + SQLite volume ke liye banaya gaya.
 """
-import asyncio
 import logging
 import os
 import sys

@@ -1,9 +1,16 @@
 __pycache__/
 *.pyc
+*.pyo
 *.session
 *.session-journal
 data/
 testdata/
 .env
+railway-env.json
 .git/
+.gitignore
 DEMO.html
+STORAGE.html
+README.md
+ENV_SETUP.md
+LICENSE

@@ -58,6 +58,9 @@ Size:        1 GB (free tier me kaafi hai)
 
 > Volume mount **nahi** kiya to har redeploy pe users/links sab udd jayenge.
 
+> ℹ️ Dockerfile me `VOLUME` instruction **nahi** hai — Railway usse reject karta hai.
+> Volume sirf dashboard se add hota hai (upar wale steps).
+
 ### 4. Variables tab me daalo
 
 ```env
@@ -164,7 +167,8 @@ filestore-bot/
 │   ├── keyboards.py     # panel layouts
 │   ├── texts.py         # saare messages
 │   └── helpers.py       # size/time/code utils
-├── Dockerfile
+├── Dockerfile           # Railway build
+├── railway.json         # deploy config + healthcheck
 ├── Procfile
 ├── requirements.txt
 └── .env.example
