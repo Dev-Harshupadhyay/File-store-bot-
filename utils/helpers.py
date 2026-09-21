@@ -93,3 +93,24 @@ def progress_bar(done, total, width=12):
         return "▱" * width
     filled = int(width * done / total)
     return "▰" * filled + "▱" * (width - filled)
+
+
+# ── link preview compat (kurigram vs purana pyrogram) ────────────────
+try:
+    from pyrogram.types import LinkPreviewOptions
+
+    _NO_PREVIEW = {"link_preview_options": LinkPreviewOptions(is_disabled=True)}
+except ImportError:  # purana pyrogram
+    _NO_PREVIEW = {"disable_web_page_preview": True}
+
+
+def no_preview():
+    """
+    Web page preview band karne ke liye kwargs.
+
+        await message.reply(text, **no_preview())
+
+    Kurigram me link_preview_options chahiye, purane pyrogram me
+    disable_web_page_preview. Ye dono handle kar leta hai.
+    """
+    return dict(_NO_PREVIEW)

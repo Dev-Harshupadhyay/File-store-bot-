@@ -14,7 +14,7 @@ import config
 import database as db
 from utils import keyboards as kb
 from utils import texts as T
-from utils.helpers import human_size, human_time, parse_target, uptime_since
+from utils.helpers import human_size, human_time, no_preview, parse_target, uptime_since
 
 log = logging.getLogger("admin")
 
@@ -317,7 +317,7 @@ async def addfsub_cmd(client, message):
         f"⚑ ᴍᴏᴅᴇ: <code>{'ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ' if mode=='request' else 'ᴅɪʀᴇᴄᴛ ᴊᴏɪɴ'}</code>\n"
         f"🔗 {invite}\n{T.LINE}\n"
         f"ᴛᴏᴛᴀʟ ғsᴜʙ ᴄʜᴀɴɴᴇʟs: <code>{db.count_fsub()}</code>",
-        disable_web_page_preview=True)
+        **no_preview())
 
 
 @Client.on_message(filters.command("fsublist") & filters.private & ADMIN)
@@ -332,7 +332,7 @@ async def fsublist_cmd(client, message):
         txt += (f"• <b>{r['title']}</b>\n"
                 f"  <code>{r['chat_id']}</code> · {mode}\n")
     txt += f"{T.LINE}\n<code>/delfsub &lt;id&gt;</code> sᴇ ʜᴀᴛᴀᴏ"
-    await message.reply(txt, disable_web_page_preview=True)
+    await message.reply(txt, **no_preview())
 
 
 @Client.on_message(filters.command("delfsub") & filters.private & ADMIN)

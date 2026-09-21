@@ -11,7 +11,7 @@ import config
 import database as db
 from utils import keyboards as kb
 from utils import texts as T
-from utils.helpers import human_time, make_code
+from utils.helpers import human_time, make_code, no_preview
 
 log = logging.getLogger("batch")
 
@@ -65,7 +65,7 @@ async def _finish(client, uid, message):
     await message.reply(
         T.BATCH_DONE.format(line=T.LINE, n=len(ids), code=code, link=link, ad=ad),
         reply_markup=kb.link_kb(link, code),
-        disable_web_page_preview=True,
+        **no_preview(),
     )
     db.log(uid, "batch_done", f"code={code} n={len(ids)}")
 
@@ -102,7 +102,7 @@ async def collect_media(client, message):
         if n % 3 == 0 or n == 1:
             try:
                 await message.reply(T.BATCH_ADDED.format(n=n),
-                                    reply_markup=kb.batch_collect_kb(n), quote=True)
+                                    reply_markup=kb.batch_collect_kb(n))
             except Exception:
                 pass
         return
@@ -115,7 +115,7 @@ async def collect_media(client, message):
     ad = human_time(db.get_int("auto_delete", 1800))
     await message.reply(
         T.BATCH_DONE.format(line=T.LINE, n=1, code=code, link=link, ad=ad),
-        reply_markup=kb.link_kb(link, code), quote=True, disable_web_page_preview=True,
+        reply_markup=kb.link_kb(link, code), **no_preview(),
     )
 
 
@@ -130,7 +130,7 @@ async def single_link(client, message):
     ad = human_time(db.get_int("auto_delete", 1800))
     await message.reply(
         T.BATCH_DONE.format(line=T.LINE, n=1, code=code, link=link, ad=ad),
-        reply_markup=kb.link_kb(link, code), disable_web_page_preview=True,
+        reply_markup=kb.link_kb(link, code), **no_preview(),
     )
 
 

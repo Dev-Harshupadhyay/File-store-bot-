@@ -13,7 +13,7 @@ import config
 import database as db
 from utils import keyboards as kb
 from utils import texts as T
-from utils.helpers import human_time, progress_bar
+from utils.helpers import human_time, no_preview, progress_bar
 
 log = logging.getLogger("start")
 
@@ -85,7 +85,7 @@ async def deliver_batch(client, message, code, override_user=None):
     batch = db.get_batch(code)
 
     if not batch or batch["revoked"]:
-        return await message.reply(T.LINK_DEAD, quote=True)
+        return await message.reply(T.LINK_DEAD)
 
     pending = await _check_fsub(client, user_id)
     if pending:
@@ -100,7 +100,7 @@ async def deliver_batch(client, message, code, override_user=None):
     delay = db.get_int("auto_delete", 1800) if db.get_bool("auto_delete_on", True) else 0
 
     status = await message.reply(
-        T.SENDING.format(n=total, bar=progress_bar(0, total)), quote=True
+        T.SENDING.format(n=total, bar=progress_bar(0, total))
     )
 
     sent_ids = []
@@ -203,7 +203,7 @@ async def start_cmd(client, message: Message):
         except Exception:
             pass
     await message.reply(text, reply_markup=kb.start_kb(is_adm),
-                        disable_web_page_preview=True)
+                        **no_preview())
 
 
 @Client.on_message(filters.command("help") & filters.private)

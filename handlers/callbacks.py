@@ -16,7 +16,7 @@ from handlers.admin import do_broadcast, panel_text, stats_text
 from utils import keyboards as kb
 from utils.buttons import blue, green, grey, red
 from utils import texts as T
-from utils.helpers import ago, human_size, human_time, uptime_since
+from utils.helpers import ago, human_size, human_time, no_preview, uptime_since
 
 log = logging.getLogger("cb")
 
@@ -34,7 +34,7 @@ async def _edit(q, text, markup):
             await q.message.edit_caption(text, reply_markup=markup)
         else:
             await q.message.edit_text(text, reply_markup=markup,
-                                      disable_web_page_preview=True)
+                                      **no_preview())
     except Exception as e:
         log.debug("edit skip: %s", e)
 
