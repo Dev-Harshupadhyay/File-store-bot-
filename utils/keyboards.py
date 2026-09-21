@@ -144,9 +144,13 @@ def start_kb(is_adm=False):
     return IKM(rows)
 
 
-def fsub_join_kb(channels, retry_param):
-    rows = [[IKB(f"⚑ {tc('Join')} {c['title'][:20]}", url=c["invite"])] for c in channels]
-    rows.append([IKB(f"↻ {tc('Try Again')}", url=retry_param)])
+def fsub_join_kb(channels, code=""):
+    rows = []
+    for c in channels:
+        label = f"⚑ {tc('Join')} {c['title'][:22]}"
+        if c.get("invite"):
+            rows.append([IKB(label, url=c["invite"])])
+    rows.append([IKB(f"↻ {tc('Try Again')}", callback_data=f"fs:retry:{code}")])
     return IKM(rows)
 
 

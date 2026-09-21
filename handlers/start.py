@@ -5,7 +5,8 @@ import asyncio
 import logging
 
 from pyrogram import Client, filters
-from pyrogram.errors import FloodWait, UserIsBlocked
+from pyrogram.enums import ChatMemberStatus
+from pyrogram.errors import FloodWait, UserIsBlocked, UserNotParticipant
 from pyrogram.types import InlineKeyboardButton as IKB
 from pyrogram.types import InlineKeyboardMarkup as IKM, Message
 
@@ -18,18 +19,44 @@ from utils.helpers import human_time, progress_bar
 log = logging.getLogger("start")
 
 
+# user in channel maana jayega agar in status me ho
+_JOINED = {
+    ChatMemberStatus.MEMBER,
+    ChatMemberStatus.ADMINISTRATOR,
+    ChatMemberStatus.OWNER,
+    ChatMemberStatus.RESTRICTED,   # restricted but still member
+}
+
+
 async def _check_fsub(client, user_id):
-    """Return list of channels user ne join nahi kiye."""
+    """Jin channels me user nahi hai unki list return karta hai."""
     if not db.get_bool("force_sub"):
         return []
+
+    # admin ko force sub se chhoot
+    if db.is_admin(user_id):
+        return []
+
     pending = []
     for ch in db.fsub_list():
+        chat_id = ch["chat_id"]
+        mode = (ch["mode"] if "mode" in ch.keys() else "join") or "join"
+
+        # request mode: pending join request bhi valid maana jata hai
+        if mode == "request" and db.has_join_request(chat_id, user_id):
+            continue
+
         try:
-            member = await client.get_chat_member(ch["chat_id"], user_id)
-            if str(member.status) in ("ChatMemberStatus.BANNED", "ChatMemberStatus.LEFT"):
-                pending.append(dict(ch))
-        except Exception:
+            member = await client.get_chat_member(chat_id, user_id)
+            if member.status in _JOINED:
+                continue
+            pending.append(dict(ch))          # LEFT / BANNED
+        except UserNotParticipant:
             pending.append(dict(ch))
+        except Exception as e:
+            # bot channel me admin nahi hai ya channel delete ho gaya
+            log.warning("fsub check fail %s: %s — skipping", chat_id, e)
+            continue                          # user ko block mat karo
     return pending
 
 
@@ -53,9 +80,9 @@ async def _auto_delete(client, chat_id, msg_ids, delay, count):
         pass
 
 
-async def deliver_batch(client, message, code):
+async def deliver_batch(client, message, code, override_user=None):
     """Batch code se saari files bhejo."""
-    user_id = message.from_user.id
+    user_id = override_user or message.from_user.id
     batch = db.get_batch(code)
 
     if not batch or batch["revoked"]:
@@ -63,10 +90,9 @@ async def deliver_batch(client, message, code):
 
     pending = await _check_fsub(client, user_id)
     if pending:
-        retry = f"https://t.me/{client.username}?start={code}"
         return await message.reply(
             T.FSUB_MSG.format(line=T.LINE),
-            reply_markup=kb.fsub_join_kb(pending, retry),
+            reply_markup=kb.fsub_join_kb(pending, code),
         )
 
     ids = batch["msg_ids"]
@@ -189,3 +215,36 @@ async def help_cmd(client, message: Message):
     else:
         await message.reply(T.HELP_USER.format(line=T.LINE, ad=ad),
                             reply_markup=kb.close_only())
+
+
+@Client.on_callback_query(filters.regex(r"^fs:retry:"))
+async def fsub_retry_cb(client, q):
+    """'Try Again' dabane par dobara check — join kiya to files bhej do."""
+    code = q.data.split(":", 2)[2]
+    user_id = q.from_user.id
+
+    pending = await _check_fsub(client, user_id)
+    if pending:
+        return await q.answer(
+            "✘ ᴀʙʜɪ ʙʜɪ ᴊᴏɪɴ ɴᴀʜɪ ᴋɪʏᴀ!\nᴘᴇʜʟᴇ sᴀᴀʀᴇ ᴄʜᴀɴɴᴇʟ ᴊᴏɪɴ ᴋᴀʀᴏ.",
+            show_alert=True,
+        )
+
+    await q.answer("✓ ᴛʜᴀɴᴋs! ғɪʟᴇs ʙʜᴇᴊ ʀᴀʜᴀ ʜᴏᴏɴ...")
+    try:
+        await q.message.delete()
+    except Exception:
+        pass
+
+    if code:
+        await deliver_batch(client, q.message, code, override_user=user_id)
+
+
+@Client.on_chat_join_request()
+async def on_join_request(client, request):
+    """Request-mode force sub — pending request ko approve maan lo."""
+    try:
+        db.add_join_request(request.chat.id, request.from_user.id)
+        log.info("join request: %s -> %s", request.from_user.id, request.chat.id)
+    except Exception as e:
+        log.warning("join request save fail: %s", e)

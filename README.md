@@ -117,7 +117,11 @@ Bas ho gaya. Bot ko `/start` bhejo.
 | `/rmadmin 12345` | Admin hatao (sirf owner) |
 | `/admins` | Admin list |
 | `/autodel 1800` | Auto-delete time (seconds, 0 = off) |
-| `/addfsub -100xxx` | Force-sub channel add |
+| `/addfsub -100xxx` | Force-sub channel add (koi bhi channel) |
+| `/addfsub @user` | Public channel username se |
+| `/addfsub -100xxx request` | Join-request mode |
+| `/fsublist` | Force-sub channels list |
+| `/delfsub -100xxx` | Force-sub channel hatao |
 | `/backup` | DB file bhejo |
 | `/revoke <code>` | Link band karo |
 | `/restart` | Bot restart |
@@ -180,7 +184,7 @@ filestore-bot/
 
 - **Ban system** — banned user ko kuch nahi milta
 - **Protect content** — ON karo to user forward/save nahi kar sakta
-- **Force subscribe** — channel join zaroori
+- **Force subscribe** — unlimited channels, public ya private dono; join-request mode bhi support; admin ko chhoot; agar bot kisi channel me admin na ho to us channel ko skip kar deta hai (user block nahi hota)
 - **Revoke link** — purana link turant dead
 - **Maintenance mode** — sirf admin use kar sakta
 - **Audit log** — kisne kya kiya sab record

@@ -176,8 +176,17 @@ def fsub_text():
            f"sᴛᴀᴛᴜs: <code>{'ᴏɴ' if db.get_bool('force_sub') else 'ᴏғғ'}</code>\n"
            f"ᴄʜᴀɴɴᴇʟs: <code>{len(rows)}</code>\n{T.LINE}\n")
     for r in rows:
-        txt += f"• {r['title']} — <code>{r['chat_id']}</code>\n"
-    txt += f"\n<code>/addfsub -100xxxx</code> ᴀᴅᴅ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ"
+        mode = (r["mode"] if "mode" in r.keys() else "join") or "join"
+        tag = " ⏳ʀᴇǫ" if mode == "request" else ""
+        txt += f"• <b>{r['title']}</b>{tag}\n  <code>{r['chat_id']}</code>\n"
+    if not rows:
+        txt += "<i>ᴀʙʜɪ ᴋᴏɪ ᴄʜᴀɴɴᴇʟ ɴᴀʜɪ</i>\n"
+    txt += (f"{T.LINE}\n"
+            f"<code>/addfsub -100xxxx</code> — ᴀᴅᴅ\n"
+            f"<code>/addfsub @username</code> — ᴘᴜʙʟɪᴄ\n"
+            f"<code>/addfsub -100xxxx request</code> — ʀᴇǫᴜᴇsᴛ ᴍᴏᴅᴇ\n"
+            f"<code>/delfsub -100xxxx</code> — ʀᴇᴍᴏᴠᴇ\n\n"
+            f"<i>ʙᴏᴛ ᴋᴏ ʜᴀʀ ᴄʜᴀɴɴᴇʟ ᴍᴇ ᴀᴅᴍɪɴ ʙᴀɴᴀɴᴀ ᴢᴀʀᴏᴏʀɪ ʜᴀɪ</i>")
     return txt
 
 

@@ -7,6 +7,7 @@ import os
 import time
 
 from pyrogram import Client, filters
+from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait, InputUserDeactivated, PeerIdInvalid, UserIsBlocked
 
 import config
@@ -235,19 +236,103 @@ async def do_broadcast(client, message, src):
 # ───────────────────────────── FORCE SUB ─────────────────────────────
 @Client.on_message(filters.command("addfsub") & filters.private & ADMIN)
 async def addfsub_cmd(client, message):
-    parts = message.text.split(maxsplit=1)
+    """
+    /addfsub -1001234567890          -> normal join
+    /addfsub @mychannel              -> username se
+    /addfsub -1001234567890 request  -> join-request mode
+    """
+    parts = message.text.split()
     if len(parts) < 2:
-        return await message.reply("ᴜsᴀɢᴇ: <code>/addfsub -100xxxxxxxxxx</code>\n"
-                                   "(ʙᴏᴛ ᴋᴏ ᴜs ᴄʜᴀɴɴᴇʟ ᴍᴇ ᴀᴅᴍɪɴ ʙᴀɴᴀᴏ)")
+        return await message.reply(
+            f"<b>⚑ ғᴏʀᴄᴇ sᴜʙ ᴀᴅᴅ</b>\n{T.LINE}\n"
+            f"<code>/addfsub -1001234567890</code>\n"
+            f"<code>/addfsub @channelusername</code>\n"
+            f"<code>/addfsub -1001234567890 request</code>\n\n"
+            f"<b>ᴢᴀʀᴏᴏʀɪ:</b> ʙᴏᴛ ᴋᴏ ᴜs ᴄʜᴀɴɴᴇʟ ᴍᴇ <b>ᴀᴅᴍɪɴ</b> ʙᴀɴᴀᴏ\n"
+            f"(ɪɴᴠɪᴛᴇ ᴜsᴇʀs ᴠɪᴀ ʟɪɴᴋ ᴘᴇʀᴍɪssɪᴏɴ ᴋᴇ sᴀᴀᴛʜ)\n{T.LINE}")
+
+    raw = parts[1].strip()
+    mode = "request" if len(parts) > 2 and parts[2].lower().startswith("req") else "join"
+
+    target = raw
+    if not raw.startswith("@"):
+        try:
+            target = int(raw)
+        except ValueError:
+            return await message.reply("✘ ɢᴀʟᴀᴛ ɪᴅ. <code>-100...</code> ʏᴀ <code>@username</code> ᴅᴏ.")
+
+    status = await message.reply("⏳ ᴄʜᴇᴄᴋ ᴋᴀʀ ʀᴀʜᴀ ʜᴏᴏɴ...")
+
+    # 1. chat milta hai?
     try:
-        cid = int(parts[1].strip())
-        chat = await client.get_chat(cid)
-        invite = chat.invite_link or await client.export_chat_invite_link(cid)
-        db.add_fsub(cid, chat.title, invite)
-        db.set("force_sub", "1")
-        await message.reply(f"✓ ғᴏʀᴄᴇ sᴜʙ ᴀᴅᴅᴇᴅ: <b>{chat.title}</b>")
+        chat = await client.get_chat(target)
     except Exception as e:
-        await message.reply(f"✘ ᴇʀʀᴏʀ: <code>{e}</code>")
+        return await status.edit(
+            f"✘ <b>ᴄʜᴀɴɴᴇʟ ɴᴀʜɪ ᴍɪʟᴀ</b>\n{T.LINE}\n"
+            f"<code>{e}</code>\n\n"
+            f"• ɪᴅ sᴀʜɪ ʜᴀɪ?\n• ʙᴏᴛ ᴜs ᴄʜᴀɴɴᴇʟ ᴍᴇ ᴀᴅᴍɪɴ ʜᴀɪ?")
+
+    # 2. bot admin hai?
+    try:
+        me = await client.get_chat_member(chat.id, "me")
+        if me.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+            return await status.edit(
+                f"✘ <b>ʙᴏᴛ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ</b>\n{T.LINE}\n"
+                f"<b>{chat.title}</b> ᴍᴇ ᴘᴇʜʟᴇ ʙᴏᴛ ᴋᴏ ᴀᴅᴍɪɴ ʙᴀɴᴀᴏ,\n"
+                f"ғɪʀ ᴅᴏʙᴀʀᴀ ᴛʀʏ ᴋᴀʀᴏ.")
+    except Exception as e:
+        return await status.edit(f"✘ ᴀᴅᴍɪɴ ᴄʜᴇᴄᴋ ғᴀɪʟ: <code>{e}</code>")
+
+    # 3. invite link
+    invite = ""
+    if getattr(chat, "username", None):
+        invite = f"https://t.me/{chat.username}"
+    else:
+        try:
+            if mode == "request":
+                lnk = await client.create_chat_invite_link(
+                    chat.id, creates_join_request=True,
+                    name=f"FSub {config.BOT_NAME[:16]}")
+            else:
+                lnk = await client.create_chat_invite_link(
+                    chat.id, name=f"FSub {config.BOT_NAME[:16]}")
+            invite = lnk.invite_link
+        except Exception:
+            invite = getattr(chat, "invite_link", "") or ""
+
+    if not invite:
+        return await status.edit(
+            f"✘ <b>ɪɴᴠɪᴛᴇ ʟɪɴᴋ ɴᴀʜɪ ʙᴀɴᴀ</b>\n{T.LINE}\n"
+            f"ʙᴏᴛ ᴋᴏ <b>ɪɴᴠɪᴛᴇ ᴜsᴇʀs ᴠɪᴀ ʟɪɴᴋ</b> ᴘᴇʀᴍɪssɪᴏɴ ᴅᴏ.")
+
+    db.add_fsub(chat.id, chat.title or str(chat.id), invite, mode)
+    db.set("force_sub", "1")
+    db.log(message.from_user.id, "add_fsub", f"{chat.id} mode={mode}")
+
+    await status.edit(
+        f"<b>✓ ғᴏʀᴄᴇ sᴜʙ ᴀᴅᴅᴇᴅ</b>\n{T.LINE}\n"
+        f"◆ ᴄʜᴀɴɴᴇʟ: <b>{chat.title}</b>\n"
+        f"◉ ɪᴅ: <code>{chat.id}</code>\n"
+        f"❖ ᴛʏᴘᴇ: <code>{'ᴘᴜʙʟɪᴄ' if getattr(chat,'username',None) else 'ᴘʀɪᴠᴀᴛᴇ'}</code>\n"
+        f"⚑ ᴍᴏᴅᴇ: <code>{'ᴊᴏɪɴ ʀᴇǫᴜᴇsᴛ' if mode=='request' else 'ᴅɪʀᴇᴄᴛ ᴊᴏɪɴ'}</code>\n"
+        f"🔗 {invite}\n{T.LINE}\n"
+        f"ᴛᴏᴛᴀʟ ғsᴜʙ ᴄʜᴀɴɴᴇʟs: <code>{db.count_fsub()}</code>",
+        disable_web_page_preview=True)
+
+
+@Client.on_message(filters.command("fsublist") & filters.private & ADMIN)
+async def fsublist_cmd(client, message):
+    rows = db.fsub_list()
+    if not rows:
+        return await message.reply("⚑ ᴋᴏɪ ғᴏʀᴄᴇ sᴜʙ ᴄʜᴀɴɴᴇʟ ɴᴀʜɪ.\n<code>/addfsub</code> sᴇ ᴀᴅᴅ ᴋᴀʀᴏ.")
+    txt = (f"<b>⚑ ғᴏʀᴄᴇ sᴜʙ ᴄʜᴀɴɴᴇʟs ({len(rows)})</b>\n{T.LINE}\n"
+           f"sᴛᴀᴛᴜs: <code>{'ᴏɴ' if db.get_bool('force_sub') else 'ᴏғғ'}</code>\n{T.LINE}\n")
+    for r in rows:
+        mode = (r["mode"] if "mode" in r.keys() else "join") or "join"
+        txt += (f"• <b>{r['title']}</b>\n"
+                f"  <code>{r['chat_id']}</code> · {mode}\n")
+    txt += f"{T.LINE}\n<code>/delfsub &lt;id&gt;</code> sᴇ ʜᴀᴛᴀᴏ"
+    await message.reply(txt, disable_web_page_preview=True)
 
 
 @Client.on_message(filters.command("delfsub") & filters.private & ADMIN)

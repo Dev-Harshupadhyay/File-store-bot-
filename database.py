@@ -48,7 +48,15 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS fsub (
     chat_id     INTEGER PRIMARY KEY,
     title       TEXT,
-    invite      TEXT
+    invite      TEXT,
+    mode        TEXT DEFAULT 'join',
+    added_at    INTEGER
+);
+CREATE TABLE IF NOT EXISTS join_requests (
+    chat_id     INTEGER,
+    user_id     INTEGER,
+    ts          INTEGER,
+    PRIMARY KEY (chat_id, user_id)
 );
 CREATE TABLE IF NOT EXISTS logs (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,6 +71,12 @@ CREATE INDEX IF NOT EXISTS idx_logs_ts ON logs(ts);
 
 with _lock:
     _conn.executescript(SCHEMA)
+    # purane database ke liye migration
+    cols = [r[1] for r in _conn.execute("PRAGMA table_info(fsub)")]
+    if "mode" not in cols:
+        _conn.execute("ALTER TABLE fsub ADD COLUMN mode TEXT DEFAULT 'join'")
+    if "added_at" not in cols:
+        _conn.execute("ALTER TABLE fsub ADD COLUMN added_at INTEGER")
     _conn.commit()
 
 
@@ -255,8 +269,32 @@ def is_owner(user_id):
 
 
 # ───────────────────────────── FORCE SUB ─────────────────────────────
-def add_fsub(chat_id, title="", invite=""):
-    _q("INSERT OR REPLACE INTO fsub(chat_id,title,invite) VALUES(?,?,?)", (chat_id, title, invite))
+def add_fsub(chat_id, title="", invite="", mode="join"):
+    _q("INSERT OR REPLACE INTO fsub(chat_id,title,invite,mode,added_at) VALUES(?,?,?,?,?)",
+       (chat_id, title, invite, mode, now()))
+
+
+def get_fsub(chat_id):
+    return _q("SELECT * FROM fsub WHERE chat_id=?", (chat_id,), fetch="one")
+
+
+def count_fsub():
+    return _q("SELECT COUNT(*) c FROM fsub", fetch="one")["c"]
+
+
+# ── join requests (request-mode force sub) ──
+def add_join_request(chat_id, user_id):
+    _q("INSERT OR IGNORE INTO join_requests(chat_id,user_id,ts) VALUES(?,?,?)",
+       (chat_id, user_id, now()))
+
+
+def has_join_request(chat_id, user_id):
+    return _q("SELECT 1 FROM join_requests WHERE chat_id=? AND user_id=?",
+              (chat_id, user_id), fetch="one") is not None
+
+
+def rm_join_request(chat_id, user_id):
+    _q("DELETE FROM join_requests WHERE chat_id=? AND user_id=?", (chat_id, user_id))
 
 
 def rm_fsub(chat_id):
