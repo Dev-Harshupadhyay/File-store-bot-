@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>50 Files kahan jaati hain — Storage Explained</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:26px 14px;line-height:1.6}
+.w{max-width:1120px;margin:0 auto}
+h1{font-size:25px;text-align:center;margin-bottom:6px}
+.sub{text-align:center;color:#7d8590;font-size:13px;margin-bottom:30px}
+h2{font-size:17px;color:#58a6ff;margin:34px 0 14px;padding-bottom:7px;border-bottom:1px solid #21262d}
+.row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.card{flex:1 1 300px;background:#161b22;border:1px solid #30363d;border-radius:11px;padding:16px}
+.card.grn{border-color:#2ea043;background:#0f1f13}
+.card.red{border-color:#f85149;background:#1f1010}
+.card.ylw{border-color:#d29922;background:#1f1a0d}
+.card.blu{border-color:#2f81f7;background:#0d1626}
+.card h3{font-size:14px;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.card p{font-size:13px;color:#b9c1ca}
+.card code{background:#0d1117;padding:1.5px 6px;border-radius:4px;font-size:12px;color:#8fd3ff;font-family:"SF Mono",Consolas,monospace}
+.flow{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin:16px 0;overflow-x:auto}
+.flow pre{font-family:"SF Mono",Consolas,monospace;font-size:12.5px;line-height:1.85;color:#c9d1d9;white-space:pre}
+.g{color:#3fb950}.r{color:#f85149}.y{color:#d29922}.b{color:#58a6ff}.m{color:#a371f7}.gr{color:#6e7681}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+th{background:#161b22;padding:10px;text-align:left;border:1px solid #30363d;color:#58a6ff;font-size:12.5px}
+td{padding:10px;border:1px solid #21262d;color:#c9d1d9}
+td b{color:#fff}
+.big{background:#0f1f13;border:2px solid #2ea043;border-radius:12px;padding:19px;margin:22px 0;text-align:center}
+.big h3{color:#3fb950;font-size:16px;margin-bottom:8px}
+.big p{font-size:14px}
+.warn{background:#1f1a0d;border-left:4px solid #d29922;border-radius:0 8px 8px 0;padding:14px 16px;margin:14px 0;font-size:13px}
+.note{background:#0d1626;border-left:4px solid #2f81f7;border-radius:0 8px 8px 0;padding:14px 16px;margin:14px 0;font-size:13px}
+ul{margin:8px 0 0 18px}li{font-size:13px;margin-bottom:5px;color:#b9c1ca}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>📦 50 Files — Kahan Jaati Hain?</h1>
+<p class="sub">Batch → Link → Delete → aur data ka poora safar</p>
+
+<div class="big">
+  <h3>✅ Chhota jawab</h3>
+  <p>Tumhari <b>50 files hamesha DB channel</b> (<code>-1004368401627</code>) me <b>safe rehti hain</b>.<br>
+  30 minute baad sirf <b>user ke chat ki copies</b> delete hoti hain — <b>original kabhi nahi</b>.<br>
+  Link zinda rehta hai — user dobara click karega to phir se 50 files mil jayengi.</p>
+</div>
+
+<h2>🔄 Poora Flow — step by step</h2>
+<div class="flow"><pre><span class="b">[1]</span> ADMIN: <span class="y">/batch</span> → 50 videos bheji
+         │
+         ├─ bot har file ko <span class="g">DB CHANNEL</span> me copy karta hai
+         │     <span class="gr">→ channel me 50 asli messages ban gaye (id: 101…150)</span>
+         │
+         └─ bot memory me list rakhta hai: <span class="gr">[101,102,…,150]</span>
+
+<span class="b">[2]</span> ADMIN: <span class="y">/done</span>
+         │
+         ├─ code bana: <span class="m">Ab3xK9pQ2</span>
+         ├─ <span class="g">SQLite (/data)</span> me save:
+         │     <span class="gr">code=Ab3xK9pQ2 · msg_ids=[101…150] · count=50</span>
+         │
+         └─ link mila: <span class="b">t.me/HarshFSBot?start=Ab3xK9pQ2</span>
+
+<span class="b">[3]</span> USER link kholta hai
+         │
+         ├─ bot SQLite se ids padhta hai → [101…150]
+         ├─ <span class="g">DB channel</span> se <span class="y">copy_message()</span> — <span class="r">move nahi, COPY</span>
+         │     <span class="gr">→ DB channel me 50 abhi bhi hain ✓</span>
+         │     <span class="gr">→ user ke chat me 50 nayi copies ✓</span>
+         │
+         └─ ⚠️ "30 min me delete — forward kar lo"
+
+<span class="b">[4]</span> 30 MINUTE BAAD
+         │
+         ├─ <span class="r">✗ user ke chat ki 50 copies DELETE</span>
+         ├─ <span class="g">✓ DB channel ki 50 original SAFE</span>
+         ├─ <span class="g">✓ SQLite me record SAFE</span>
+         └─ <span class="g">✓ link ABHI BHI kaam karta hai</span>
+
+<span class="b">[5]</span> USER dobara link kholta hai
+         └─ <span class="g">50 files phir se mil gayi</span> <span class="gr">(step 3 repeat)</span></pre></div>
+
+<h2>🗄 Teen alag jagah — kya kahan</h2>
+<div class="row">
+  <div class="card grn">
+    <h3>🗄 DB CHANNEL</h3>
+    <p><code>-1004368401627</code></p>
+    <p style="margin-top:8px"><b>Kya rehta hai:</b> asli 50 videos (actual files)</p>
+    <p><b>Kab tak:</b> hamesha — jab tak tum khud delete na karo</p>
+    <p><b>Size:</b> unlimited (Telegram ka server)</p>
+    <p style="color:#f85149;margin-top:8px"><b>⚠️ Yahan se kabhi delete mat karna</b></p>
+  </div>
+  <div class="card blu">
+    <h3>💾 SQLite — /data</h3>
+    <p><code>/data/filestore.db</code></p>
+    <p style="margin-top:8px"><b>Kya rehta hai:</b> sirf <i>records</i> — file nahi</p>
+    <p>code, message ids, users, admins, settings, logs</p>
+    <p><b>Size:</b> bahut chhota (~2 KB per batch)</p>
+    <p style="color:#3fb950;margin-top:8px">✓ Railway volume — redeploy pe safe</p>
+  </div>
+  <div class="card red">
+    <h3>💬 USER KA CHAT</h3>
+    <p>temporary copies</p>
+    <p style="margin-top:8px"><b>Kya rehta hai:</b> 50 copies</p>
+    <p><b>Kab tak:</b> sirf 30 minute</p>
+    <p style="color:#f85149;margin-top:8px">✗ Auto-delete — sirf yahi hatta hai</p>
+  </div>
+</div>
+
+<h2>📊 50 files ka hisaab — ek nazar me</h2>
+<table>
+<tr><th>Moment</th><th>DB Channel</th><th>SQLite</th><th>User Chat</th><th>Link</th></tr>
+<tr><td>Batch bheji</td><td><b>50 ✓</b></td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>/done kiya</td><td><b>50 ✓</b></td><td>1 record</td><td>—</td><td><b>active</b></td></tr>
+<tr><td>User ne khola</td><td><b>50 ✓</b></td><td>1 record</td><td>50 copies</td><td><b>active</b></td></tr>
+<tr><td>30 min baad</td><td><b>50 ✓</b></td><td>1 record</td><td><span style="color:#f85149">0 — deleted</span></td><td><b>active</b></td></tr>
+<tr><td>Dobara khola</td><td><b>50 ✓</b></td><td>1 record</td><td>50 phir se</td><td><b>active</b></td></tr>
+<tr><td>Redeploy hua</td><td><b>50 ✓</b></td><td><b>safe (volume)</b></td><td>—</td><td><b>active</b></td></tr>
+<tr><td><code>/revoke</code> kiya</td><td><b>50 ✓</b></td><td>revoked=1</td><td>—</td><td><span style="color:#f85149">dead</span></td></tr>
+</table>
+
+<div class="note">
+<b>💡 Key point:</b> Bot <code>copy_message()</code> use karta hai, <code>forward</code> nahi.<br>
+Isliye — (1) original DB channel me rehta hai, (2) user ko "Forwarded from" nahi dikhta, yaani tumhara storage channel kabhi leak nahi hota.
+</div>
+
+<h2>💾 /backup kya deta hai?</h2>
+<div class="row">
+  <div class="card blu">
+    <h3>✅ Backup me hai</h3>
+    <ul>
+      <li>Saare users + ban status</li>
+      <li>Saare batch codes + message ids</li>
+      <li>Admins list</li>
+      <li>Settings (auto-delete, protect…)</li>
+      <li>Audit logs</li>
+    </ul>
+    <p style="margin-top:9px"><b>Size:</b> ~100 KB (1000 batches par bhi)</p>
+  </div>
+  <div class="card ylw">
+    <h3>❌ Backup me nahi hai</h3>
+    <ul>
+      <li>Actual video files</li>
+    </ul>
+    <p style="margin-top:9px">Kyunki wo DB channel me hain — Telegram ke server pe. <code>.db</code> file me sirf unke <b>address</b> (message ids) hain.</p>
+    <p style="margin-top:9px;color:#d29922"><b>Isliye:</b> DB channel delete = files gayi, backup bhi bekaar.</p>
+  </div>
+</div>
+
+<div class="warn">
+<b>⚠️ 3 cheezein jo kabhi mat karna</b>
+<ul>
+<li><b>DB channel se messages delete</b> — saare purane links dead ho jayenge</li>
+<li><b>DB channel se bot ko remove</b> — bot files copy nahi kar payega</li>
+<li><b>Volume mount hatana</b> — saare batch records, users, admins gayab</li>
+</ul>
+</div>
+
+<h2>⏱ 50 files ka realistic time</h2>
+<div class="flow"><pre>Admin bhejta hai      : ~3-5 min <span class="gr">(upload speed pe depend)</span>
+Bot DB me store       : instant <span class="gr">(har file pe ~0.3s)</span>
+/done → link          : &lt; 1 second
+User ko delivery      : ~25-30 sec <span class="gr">(50 × 0.35s rate limit)</span>
+Auto-delete timer     : 30:00 <span class="gr">(pehli file se count)</span>
+
+<span class="y">Note:</span> Telegram flood-limit se bachne ke liye bot har file ke beech
+0.35s ruk-ta hai. 50 files = ~18-30 sec. Progress bar dikhta rehta hai.</pre></div>
+
+<div class="big">
+  <h3>🎯 Ek line me</h3>
+  <p>DB channel = <b>godown</b> (permanent) · SQLite = <b>register</b> (kaun si file kahan) · User chat = <b>delivery</b> (30 min me wapas)</p>
+</div>
+
+</div>
+</body>
+</html>
