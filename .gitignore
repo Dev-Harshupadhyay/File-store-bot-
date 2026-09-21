@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.session
+*.session-journal
+data/
+.env
+
+# secrets — kabhi commit mat karna
+railway-env.json
+*.env

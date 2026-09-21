@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harsh File Store Bot — Flow Demo</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:#e6edf3;padding:24px 12px}
+  .wrap{max-width:1500px;margin:0 auto}
+  h1{font-size:26px;text-align:center;margin-bottom:6px;font-weight:700}
+  .sub{text-align:center;color:#7d8590;font-size:13px;margin-bottom:28px}
+  .grid{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .phone{width:330px;background:#0f0f0f;border-radius:26px;border:6px solid #1c1c1c;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6);flex-shrink:0}
+  .tg-head{background:#17212b;padding:10px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #0b1016}
+  .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2ea6ff,#0088cc);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+  .tinfo b{font-size:14px;display:block;color:#fff}
+  .tinfo span{font-size:11px;color:#6ab3f3}
+  .chat{background:#0e1621;min-height:430px;padding:12px 10px;background-image:radial-gradient(circle at 20% 30%,rgba(46,166,255,.04) 0 2px,transparent 2px),radial-gradient(circle at 70% 60%,rgba(46,166,255,.04) 0 2px,transparent 2px);background-size:90px 90px}
+  .msg{max-width:88%;padding:8px 11px;border-radius:12px;font-size:12.5px;line-height:1.55;margin-bottom:8px;word-wrap:break-word;position:relative}
+  .in{background:#182533;border-bottom-left-radius:3px}
+  .out{background:#2b5278;margin-left:auto;border-bottom-right-radius:3px}
+  .msg b{color:#fff}
+  .msg code{background:rgba(0,0,0,.35);padding:1px 5px;border-radius:4px;font-family:"SF Mono",Consolas,monospace;font-size:11.5px;color:#8fd3ff}
+  .time{font-size:9.5px;color:#7d8590;text-align:right;margin-top:3px}
+  .kb{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px}
+  .kb button{flex:1 1 calc(50% - 4px);border:none;border-radius:7px;padding:9px 4px;font-size:10.5px;font-weight:600;color:#fff;cursor:default;letter-spacing:.2px;font-family:inherit}
+  .kb .full{flex:1 1 100%}
+  .blue{background:#2b7cd3}.green{background:#3a9e4a}.red{background:#c0392b}.grey{background:#3a4a5a}
+  .file{background:#182533;border-radius:10px;padding:9px;margin-bottom:6px;display:flex;align-items:center;gap:9px;max-width:88%}
+  .fic{width:36px;height:36px;border-radius:7px;background:#2b5278;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .fmeta b{font-size:12px;display:block;color:#fff}
+  .fmeta span{font-size:10px;color:#7d8590}
+  .lbl{text-align:center;font-size:12px;font-weight:700;padding:9px;background:#161b22;color:#58a6ff;border-bottom:1px solid #21262d;letter-spacing:.4px}
+  .step{display:inline-block;background:#238636;color:#fff;border-radius:11px;padding:1px 9px;font-size:10px;margin-right:5px}
+  .warn{background:#3d2b12;border-left:3px solid #d29922}
+  .del{background:#3d1c1c;border-left:3px solid #f85149}
+  .dchip{display:inline-block;background:#182533;color:#7d8590;font-size:10px;padding:2px 10px;border-radius:9px;margin:0 auto 10px;display:block;width:fit-content}
+  .flowbar{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:16px;margin:26px auto 0;max-width:1200px}
+  .flowbar h3{font-size:14px;margin-bottom:12px;color:#58a6ff}
+  .fl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+  .fl div{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:8px 13px;font-size:11.5px}
+  .fl .ar{border:none;background:none;color:#3a9e4a;font-size:16px;padding:0 2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🤖 Hᴀʀsʜ Fɪʟᴇ Sᴛᴏʀᴇ Bᴏᴛ v1.0</h1>
+  <p class="sub">Batch → Link → User Start → Files → Auto Delete (30 min) · SQLite on Railway Volume</p>
+
+  <div class="grid">
+
+    <!-- 1. ADMIN BATCH -->
+    <div class="phone">
+      <div class="lbl"><span class="step">1</span> ADMIN — /batch</div>
+      <div class="tg-head"><div class="av">HF</div><div class="tinfo"><b>Harsh File Store</b><span>bot</span></div></div>
+      <div class="chat">
+        <div class="dchip">September 21</div>
+        <div class="msg out"><code>/batch</code><div class="time">8:30</div></div>
+        <div class="msg in"><b>◆ ʙᴀᴛᴄʜ ᴍᴏᴅᴇ ᴏɴ</b><br>━━━━━━━━━━━<br>ᴀʙ ᴍᴜᴊʜᴇ sᴀᴀʀɪ ᴠɪᴅᴇᴏs / ғɪʟᴇs ʙʜᴇᴊᴏ (ᴇᴋ ᴇᴋ ᴋᴀʀ ᴋᴇ ʏᴀ ᴀʟʙᴜᴍ ᴍᴇ).<br>ᴊᴀʙ sᴀʙ ʙʜᴇᴊ ᴅᴏ ᴛᴏ <b>ᴅᴏɴᴇ</b> ᴅᴀʙᴀᴏ ʏᴀ <code>/done</code> ʟɪᴋʜᴏ.<br><br>▪️ ᴄᴏʟʟᴇᴄᴛᴇᴅ: <code>0</code><div class="time">8:30</div></div>
+        <div class="kb">
+          <button class="green full">✓ Dᴏɴᴇ (0)</button>
+          <button class="grey">↺ Cʟᴇᴀʀ</button><button class="red">✘ Cᴀɴᴄᴇʟ</button>
+        </div>
+        <div class="file" style="margin-left:auto"><div class="fic">🎬</div><div class="fmeta"><b>Episode_01.mp4</b><span>248.5 MB</span></div></div>
+        <div class="file" style="margin-left:auto"><div class="fic">🎬</div><div class="fmeta"><b>Episode_02.mp4</b><span>251.2 MB</span></div></div>
+        <div class="msg in">✓ <b>3</b> ғɪʟᴇs ᴄᴏʟʟᴇᴄᴛᴇᴅ · <code>/done</code> ᴛᴏ ғɪɴɪsʜ<div class="time">8:31</div></div>
+        <div class="kb"><button class="green full">✓ Dᴏɴᴇ (3)</button></div>
+      </div>
+    </div>
+
+    <!-- 2. LINK -->
+    <div class="phone">
+      <div class="lbl"><span class="step">2</span> ADMIN — /done → LINK</div>
+      <div class="tg-head"><div class="av">HF</div><div class="tinfo"><b>Harsh File Store</b><span>bot</span></div></div>
+      <div class="chat">
+        <div class="msg out"><code>/done</code><div class="time">8:32</div></div>
+        <div class="msg in"><b>✅ ʙᴀᴛᴄʜ ʟɪɴᴋ ʀᴇᴀᴅʏ</b><br>━━━━━━━━━━━<br>▪️ ғɪʟᴇs: <code>3</code><br>◈ ᴄᴏᴅᴇ: <code>Ab3xK9pQ2</code><br>❖ ᴀᴜᴛᴏ-ᴅᴇʟᴇᴛᴇ: <code>30m</code><br><br>🔗 <code>t.me/HarshFSBot?start=Ab3xK9pQ2</code><br><br><i>ʏᴇʜ ʟɪɴᴋ ᴋɪsɪ ᴋᴏ ʙʜɪ ᴅᴏ — ʙᴏᴛ sᴛᴀʀᴛ ʜᴏᴛᴇ ʜɪ sᴀᴀʀɪ ғɪʟᴇs ᴍɪʟ ᴊᴀᴇɴɢɪ.</i><div class="time">8:32</div></div>
+        <div class="kb">
+          <button class="blue full">▸ Oᴘᴇɴ Lɪɴᴋ</button>
+          <button class="green full">⚑ Sʜᴀʀᴇ</button>
+          <button class="red">✘ Rᴇᴠᴏᴋᴇ</button><button class="blue">◉ Iɴғᴏ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. USER RECEIVES -->
+    <div class="phone">
+      <div class="lbl"><span class="step">3</span> USER — link se start</div>
+      <div class="tg-head"><div class="av">HF</div><div class="tinfo"><b>Harsh File Store</b><span>bot</span></div></div>
+      <div class="chat">
+        <div class="msg out"><code>/start Ab3xK9pQ2</code><div class="time">8:40</div></div>
+        <div class="msg in">⏳ <b>3</b> ғɪʟᴇs ʙʜᴇᴊ ʀᴀʜᴀ ʜᴏᴏɴ...<br>▰▰▰▰▰▰▰▰▱▱▱▱<div class="time">8:40</div></div>
+        <div class="file"><div class="fic">🎬</div><div class="fmeta"><b>Episode_01.mp4</b><span>248.5 MB</span></div></div>
+        <div class="file"><div class="fic">🎬</div><div class="fmeta"><b>Episode_02.mp4</b><span>251.2 MB</span></div></div>
+        <div class="file"><div class="fic">🎬</div><div class="fmeta"><b>Episode_03.mp4</b><span>244.8 MB</span></div></div>
+        <div class="msg in warn"><b>⚠️ ɪᴍᴘᴏʀᴛᴀɴᴛ</b><br>━━━━━━━━━━━<br>ʏᴇʜ <b>3</b> ғɪʟᴇs <b>30m</b> ᴋᴇ ʙᴀᴀᴅ ᴀᴜᴛᴏ-ᴅᴇʟᴇᴛᴇ ʜᴏ ᴊᴀᴇɴɢɪ.<br>ᴊᴀʟᴅɪ sᴇ ᴀᴘɴᴇ <b>sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs</b> ᴍᴇ ғᴏʀᴡᴀʀᴅ ᴋᴀʀ ʟᴏ 📥<div class="time">8:41</div></div>
+      </div>
+    </div>
+
+    <!-- 4. AUTO DELETE -->
+    <div class="phone">
+      <div class="lbl"><span class="step">4</span> 30 MIN BAAD — auto delete</div>
+      <div class="tg-head"><div class="av">HF</div><div class="tinfo"><b>Harsh File Store</b><span>bot</span></div></div>
+      <div class="chat">
+        <div class="dchip">30 minutes later…</div>
+        <div style="opacity:.25;text-decoration:line-through">
+          <div class="file"><div class="fic">🎬</div><div class="fmeta"><b>Episode_01.mp4</b><span>deleted</span></div></div>
+          <div class="file"><div class="fic">🎬</div><div class="fmeta"><b>Episode_02.mp4</b><span>deleted</span></div></div>
+          <div class="file"><div class="fic">🎬</div><div class="fmeta"><b>Episode_03.mp4</b><span>deleted</span></div></div>
+        </div>
+        <div class="msg in del"><b>🗑 ғɪʟᴇs ᴅᴇʟᴇᴛᴇᴅ</b><br>━━━━━━━━━━━<br>ᴛɪᴍᴇ ᴋʜᴀᴛᴀᴍ — <b>3</b> ғɪʟᴇs ʜᴀᴛᴀ ᴅɪ ɢᴀʏɪ.<br>ᴅᴏʙᴀʀᴀ ᴄʜᴀʜɪʏᴇ? ɴᴇᴇᴄʜᴇ ᴋᴀ ʙᴜᴛᴛᴏɴ ᴅᴀʙᴀᴏ ↓<div class="time">9:11</div></div>
+        <div class="kb"><button class="blue full">↻ Gᴇᴛ Fɪʟᴇs Aɢᴀɪɴ</button></div>
+      </div>
+    </div>
+
+    <!-- 5. ADMIN PANEL -->
+    <div class="phone">
+      <div class="lbl"><span class="step">5</span> ADMIN PANEL — /panel</div>
+      <div class="tg-head"><div class="av">HF</div><div class="tinfo"><b>Harsh File Store</b><span>bot</span></div></div>
+      <div class="chat">
+        <div class="msg in"><b>⚙️ ᴀᴅᴍɪɴ ᴄᴏɴᴛʀᴏʟ ᴘᴀɴᴇʟ</b><br>━━━━━━━━━━━<br>◉ ᴜsᴇʀs: <code>1,248</code> · ✘ ʙᴀɴɴᴇᴅ: <code>3</code><br>◆ ʙᴀᴛᴄʜᴇs: <code>92</code> · ▪️ ғɪʟᴇs: <code>417</code><br>❖ ᴀᴜᴛᴏ-ᴅᴇʟᴇᴛᴇ: <code>30m</code><br>⏱ ᴜᴘᴛɪᴍᴇ: <code>4d 12h</code><br>━━━━━━━━━━━<br><i>ɴᴇᴇᴄʜᴇ sᴇ ᴏᴘᴛɪᴏɴ ᴄʜᴜɴᴏ ↓</i><div class="time">8:35</div></div>
+        <div class="kb">
+          <button class="blue">▪️ Sᴛᴀᴛs</button><button class="blue">◉ Usᴇʀs</button>
+          <button class="blue">◆ Aʟʟ Fɪʟᴇs</button><button class="blue">◆ Bᴀᴛᴄʜᴇs</button>
+          <button class="green">⚑ Bʀᴏᴀᴅᴄᴀsᴛ</button><button class="red">✘ Bᴀɴ / Uɴʙᴀɴ</button>
+          <button class="green">⊕ Aᴅᴅ Aᴅᴍɪɴ</button><button class="blue">◇ Aᴅᴍɪɴs</button>
+          <button class="blue">❖ Aᴜᴛᴏ Dᴇʟᴇᴛᴇ</button><button class="blue">✿ Pʀᴏᴛᴇᴄᴛ</button>
+          <button class="blue">⚙️ Fᴏʀᴄᴇ Sᴜʙ</button><button class="blue">◉ Aᴜᴅɪᴛ Lᴏɢ</button>
+          <button class="blue">⚙️ Bᴀᴄᴋᴜᴘ Dʙ</button><button class="red">▣ Sᴇᴄᴜʀɪᴛʏ</button>
+          <button class="red">⚠️ Mᴀɪɴᴛᴇɴᴀɴᴄᴇ</button><button class="blue">⚙️ Sᴇᴛᴛɪɴɢs</button>
+          <button class="green">✓ Aᴜᴛᴏ Dᴇʟ: ᴏɴ</button><button class="grey">✿ Pʀᴏᴛᴇᴄᴛ: ᴏғғ</button>
+          <button class="grey">⚑ F-Sᴜʙ: ᴏғғ</button><button class="grey">⚠️ Mᴀɪɴᴛ: ᴏғғ</button>
+          <button class="blue">▲ Sᴛᴀʀᴛ Pʜᴏᴛᴏ</button><button class="green">↻ Rᴇsᴛᴀʀᴛ</button>
+          <button class="blue">✦ Sʏsᴛᴇᴍ</button><button class="red">✕ Cʟᴏsᴇ</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="flowbar">
+    <h3>⚡ Complete Flow</h3>
+    <div class="fl">
+      <div><b>ADMIN</b> <code>/batch</code></div><div class="ar">→</div>
+      <div>🎬 videos bhejo</div><div class="ar">→</div>
+      <div><code>/done</code></div><div class="ar">→</div>
+      <div>🔗 link mila</div><div class="ar">→</div>
+      <div>share</div><div class="ar">→</div>
+      <div><b>USER</b> start</div><div class="ar">→</div>
+      <div>📥 files</div><div class="ar">→</div>
+      <div>⚠️ 30 min warning</div><div class="ar">→</div>
+      <div>🗑 auto delete</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
