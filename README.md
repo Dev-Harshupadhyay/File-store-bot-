@@ -226,6 +226,52 @@ filestore-bot/
 
 ---
 
+## ⚑ Force Subscribe — setup
+
+Koi bhi channel chalega (public ya private), bas **bot us channel me admin hona chahiye**.
+
+```bash
+# 1. bot ko channel me admin banao
+#    (permissions: Invite Users via Link ✅)
+
+# 2. channel ka koi message bot ko forward karke:
+/id
+#    -> ◆ ᴄʜᴀɴɴᴇʟ ɪᴅ: -1001234567890
+
+# 3. add karo:
+/addfsub -1001234567890        # private
+/addfsub @moviehub             # public
+/addfsub -1001234567890 request  # join-request mode
+
+# 4. check:
+/fsublist
+```
+
+Pehla channel add karte hi force sub **apne aap ON** ho jata hai.
+
+| Command | Kaam |
+|---|---|
+| `/addfsub -100xxx` | Private channel add |
+| `/addfsub @username` | Public channel add |
+| `/addfsub -100xxx request` | Join-request mode |
+| `/fsublist` | Channels list |
+| `/delfsub -100xxx` | Channel hatao |
+| `/panel` → ⚑ F-Sub | ON / OFF toggle |
+
+**Do modes:**
+- **Direct join** (default) — user ko actually join karna hoga
+- **Request mode** — join request bhej di to kaafi, approval ka wait nahi
+
+**Notes:**
+- Unlimited channels add kar sakte ho
+- Admins ko force sub se chhoot hai
+- Bot kisi channel me admin na ho to wo channel skip ho jata hai (user block nahi hota)
+- Groups bhi chalte hain
+
+Poori guide: `FORCE_SUB_GUIDE.html`
+
+---
+
 ## 👨‍💻 Developer
 
 **[Harsh Upadhyay](https://new-profotilo-flame.vercel.app)** — Full Stack Web Developer

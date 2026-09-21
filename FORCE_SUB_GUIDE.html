@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Force Subscribe — Setup Guide</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:26px 14px;line-height:1.65}
+.w{max-width:1000px;margin:0 auto}
+h1{font-size:26px;text-align:center;margin-bottom:6px}
+.sub{text-align:center;color:#7d8590;font-size:13px;margin-bottom:30px}
+h2{font-size:18px;color:#58a6ff;margin:34px 0 14px;padding-bottom:8px;border-bottom:1px solid #21262d}
+.step{background:#161b22;border:1px solid #30363d;border-radius:11px;padding:18px;margin-bottom:14px;position:relative;padding-left:60px}
+.step .n{position:absolute;left:16px;top:16px;width:30px;height:30px;border-radius:50%;background:#238636;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.step h3{font-size:15px;margin-bottom:8px;color:#fff}
+.step p{font-size:13.5px;color:#b9c1ca;margin-bottom:6px}
+code{background:#0d1117;border:1px solid #30363d;padding:2px 7px;border-radius:5px;font-family:"SF Mono",Consolas,monospace;font-size:12.5px;color:#8fd3ff}
+pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:13px;overflow-x:auto;margin:10px 0}
+pre code{background:none;border:none;padding:0;font-size:12.5px;line-height:1.75;color:#c9d1d9}
+.g{color:#3fb950}.r{color:#f85149}.y{color:#d29922}.b{color:#58a6ff}.gr{color:#6e7681}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+th{background:#161b22;padding:10px;text-align:left;border:1px solid #30363d;color:#58a6ff;font-size:12.5px}
+td{padding:10px;border:1px solid #21262d;color:#c9d1d9}
+td b{color:#fff}
+.warn{background:#1f1a0d;border-left:4px solid #d29922;border-radius:0 8px 8px 0;padding:14px 16px;margin:14px 0;font-size:13.5px}
+.ok{background:#0f1f13;border-left:4px solid #2ea043;border-radius:0 8px 8px 0;padding:14px 16px;margin:14px 0;font-size:13.5px}
+.err{background:#1f1010;border-left:4px solid #f85149;border-radius:0 8px 8px 0;padding:14px 16px;margin:14px 0;font-size:13.5px}
+ul{margin:8px 0 0 20px}li{font-size:13.5px;margin-bottom:5px;color:#b9c1ca}
+.chat{background:#0e1621;border:1px solid #21262d;border-radius:11px;padding:14px;margin:12px 0;max-width:420px}
+.msg{background:#182533;border-radius:11px;padding:10px 12px;font-size:12.5px;margin-bottom:7px;line-height:1.6}
+.msg.out{background:#2b5278;margin-left:40px}
+.btn{display:block;background:#2b7cd3;color:#fff;border-radius:7px;padding:9px;text-align:center;font-size:11.5px;font-weight:600;margin-bottom:5px}
+.btn.grn{background:#3a9e4a}
+.two{display:flex;gap:12px;flex-wrap:wrap}
+.two>div{flex:1 1 320px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:11px;padding:16px}
+.card.blu{border-color:#2f81f7;background:#0d1626}
+.card.grn{border-color:#2ea043;background:#0f1f13}
+.card h3{font-size:14px;margin-bottom:9px}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>⚑ Force Subscribe — Setup Guide</h1>
+<p class="sub">Koi bhi channel · public ya private · unlimited</p>
+
+<div class="ok">
+<b>Ek hi rule:</b> bot ko us channel me <b>admin</b> banana padega. Bas itna.
+Telegram sirf admins ko batati hai ki koi user member hai ya nahi.
+</div>
+
+<h2>📋 Setup — 4 step</h2>
+
+<div class="step">
+  <div class="n">1</div>
+  <h3>Bot ko channel me admin banao</h3>
+  <p>Channel kholo → <b>Administrators</b> → <b>Add Admin</b> → apna bot search karke add karo.</p>
+  <p>Permissions me ye do zaroor on rakhna:</p>
+  <ul>
+    <li><b>Invite Users via Link</b> — bina iske invite link nahi banegi</li>
+    <li><b>Manage Channel</b> (ya default admin rights)</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="n">2</div>
+  <h3>Channel ki ID nikalo</h3>
+  <p><b>Public channel?</b> ID ki zaroorat nahi — seedha <code>@username</code> use kar lo.</p>
+  <p><b>Private channel?</b> Channel me koi message bhejo → usko apne bot ko <b>forward</b> karo → bot me <code>/id</code> likho:</p>
+  <pre><code><span class="gr">You:</span>  /id
+<span class="gr">Bot:</span>  ◉ ʏᴏᴜʀ ɪᴅ: 1763060393
+      ◆ <span class="g">ᴄʜᴀɴɴᴇʟ ɪᴅ: -1001234567890</span>  ← ye</code></pre>
+</div>
+
+<div class="step">
+  <div class="n">3</div>
+  <h3>Bot me add karo</h3>
+  <pre><code><span class="b">/addfsub</span> -1001234567890        <span class="gr">← private channel</span>
+<span class="b">/addfsub</span> @moviehub              <span class="gr">← public channel</span>
+<span class="b">/addfsub</span> -1001234567890 request <span class="gr">← join-request mode</span></code></pre>
+  <p>Bot khud check karega: channel exists? bot admin hai? invite link ban sakti hai? — teeno sahi to confirm dega.</p>
+</div>
+
+<div class="step">
+  <div class="n">4</div>
+  <h3>ON karo</h3>
+  <p>Pehla channel add karte hi force sub <b>apne aap ON</b> ho jata hai.</p>
+  <p>Baad me band/chalu karna ho: <code>/panel</code> → <b>⚑ F-Sub</b> toggle.</p>
+</div>
+
+<h2>✅ Add hone par bot ye dikhayega</h2>
+<div class="chat">
+  <div class="msg out">/addfsub -1001234567890</div>
+  <div class="msg">✓ <b>ғᴏʀᴄᴇ sᴜʙ ᴀᴅᴅᴇᴅ</b><br>
+  ━━━━━━━━━━━━━━<br>
+  ◆ ᴄʜᴀɴɴᴇʟ: <b>Movies Hub</b><br>
+  ◉ ɪᴅ: <code style="font-size:11px">-1001234567890</code><br>
+  ❖ ᴛʏᴘᴇ: <code style="font-size:11px">ᴘʀɪᴠᴀᴛᴇ</code><br>
+  ⚑ ᴍᴏᴅᴇ: <code style="font-size:11px">ᴅɪʀᴇᴄᴛ ᴊᴏɪɴ</code><br>
+  🔗 t.me/+abc123xyz<br>
+  ━━━━━━━━━━━━━━<br>
+  ᴛᴏᴛᴀʟ ғsᴜʙ ᴄʜᴀɴɴᴇʟs: <code style="font-size:11px">1</code></div>
+</div>
+
+<h2>👤 User ko kya dikhega</h2>
+<p style="font-size:13.5px;color:#b9c1ca;margin-bottom:10px">Jab koi user link kholega aur channel join nahi kiya hoga:</p>
+<div class="chat">
+  <div class="msg"><b>⚑ ᴊᴏɪɴ ʀᴇǫᴜɪʀᴇᴅ</b><br>
+  ━━━━━━━━━━━━━━<br>
+  ғɪʟᴇ ʟᴇɴᴇ sᴇ ᴘᴇʜʟᴇ ɴᴇᴇᴄʜᴇ ᴅɪʏᴇ <b>sᴀᴀʀᴇ ᴄʜᴀɴɴᴇʟ ᴊᴏɪɴ</b> ᴋᴀʀᴏ,<br>
+  ғɪʀ <b>↻ ᴛʀʏ ᴀɢᴀɪɴ</b> ᴅᴀʙᴀᴏ — ғɪʟᴇs ᴛᴜʀᴀɴᴛ ᴍɪʟ ᴊᴀᴇɴɢɪ.</div>
+  <div class="btn">⚑ Jᴏɪɴ Movies Hub</div>
+  <div class="btn">⚑ Jᴏɪɴ Backup Channel</div>
+  <div class="btn grn">↻ Tʀʏ Aɢᴀɪɴ</div>
+</div>
+<p style="font-size:13px;color:#7d8590">Join karke <b>Try Again</b> dabate hi files turant aa jayengi — dobara link kholna nahi padta.</p>
+
+<h2>🎛 Do modes</h2>
+<div class="two">
+  <div class="card grn">
+    <h3>🟢 Direct Join <span style="color:#6e7681;font-weight:400">(default)</span></h3>
+    <p style="font-size:13px;color:#b9c1ca">User ne channel <b>join kar liya</b> tabhi file milegi.</p>
+    <pre style="margin-top:9px"><code>/addfsub -100xxx</code></pre>
+    <p style="font-size:12.5px;color:#7d8590;margin-top:8px">Normal channels ke liye. Sabse aam.</p>
+  </div>
+  <div class="card blu">
+    <h3>🔵 Join Request</h3>
+    <p style="font-size:13px;color:#b9c1ca">User ne <b>request bhej di</b> to kaafi hai — approve ka wait nahi.</p>
+    <pre style="margin-top:9px"><code>/addfsub -100xxx request</code></pre>
+    <p style="font-size:12.5px;color:#7d8590;margin-top:8px">Un channels ke liye jahan manual approval hoti hai. Member count badhta hai, user ko file bhi turant milti hai.</p>
+  </div>
+</div>
+
+<h2>🛠 Saare commands</h2>
+<table>
+<tr><th>Command</th><th>Kaam</th></tr>
+<tr><td><code>/addfsub -100xxx</code></td><td>Private channel add</td></tr>
+<tr><td><code>/addfsub @username</code></td><td>Public channel add</td></tr>
+<tr><td><code>/addfsub -100xxx request</code></td><td>Join-request mode</td></tr>
+<tr><td><code>/fsublist</code></td><td>Saare channels dekho</td></tr>
+<tr><td><code>/delfsub -100xxx</code></td><td>Channel hatao</td></tr>
+<tr><td><code>/id</code></td><td>Channel ID nikalo (forward karke)</td></tr>
+<tr><td><code>/panel</code> → <b>⚑ Force Sub</b></td><td>Panel se manage</td></tr>
+<tr><td><code>/panel</code> → <b>⚑ F-Sub</b> toggle</td><td>ON / OFF</td></tr>
+</table>
+
+<h2>💡 Kaam ki baatein</h2>
+<div class="ok">
+<ul style="margin:0 0 0 18px">
+<li><b>Unlimited channels</b> — jitne chaho add karo, sab join karne padenge</li>
+<li><b>Admins ko chhoot</b> — tumhe khud join nahi karna padega</li>
+<li><b>Bot admin nahi?</b> Wo channel silently skip ho jayega — user block nahi hoga</li>
+<li><b>Groups bhi chalte hain</b>, sirf channels nahi</li>
+<li><b>User leave kar de?</b> Agli baar link kholte hi phir se join maangega</li>
+</ul>
+</div>
+
+<h2>❌ Common errors</h2>
+<div class="err">
+<b>"ʙᴏᴛ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ"</b><br>
+<span style="color:#b9c1ca">Bot ko us channel me admin banao, phir dobara <code>/addfsub</code> karo.</span>
+</div>
+<div class="err">
+<b>"ᴄʜᴀɴɴᴇʟ ɴᴀʜɪ ᴍɪʟᴀ"</b><br>
+<span style="color:#b9c1ca">ID galat hai, ya bot ne kabhi us channel ko "dekha" nahi. Pehle admin banao — phir ID apne aap resolve ho jayegi.</span>
+</div>
+<div class="err">
+<b>"ɪɴᴠɪᴛᴇ ʟɪɴᴋ ɴᴀʜɪ ʙᴀɴᴀ"</b><br>
+<span style="color:#b9c1ca">Bot ko <b>Invite Users via Link</b> permission do.</span>
+</div>
+<div class="warn">
+<b>User join karke bhi "join karo" dikh raha hai?</b><br>
+<span style="color:#b9c1ca">Bot ko channel se remove to nahi kar diya? Admin rights check karo. Bina admin ke bot membership verify hi nahi kar sakta.</span>
+</div>
+
+<h2>⚡ Quick start — copy paste</h2>
+<pre><code><span class="gr"># 1. bot ko channel me admin banao (Telegram app se)</span>
+
+<span class="gr"># 2. channel ka message bot ko forward karke:</span>
+/id
+
+<span class="gr"># 3. jo ID mile wo daalo:</span>
+/addfsub -1001234567890
+
+<span class="gr"># 4. check karo:</span>
+/fsublist
+
+<span class="gr"># bas! ab har user ko join karna padega</span></code></pre>
+
+</div>
+</body>
+</html>
