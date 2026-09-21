@@ -103,10 +103,13 @@ Bas ho gaya. Bot ko `/start` bhejo.
 ### Admin
 | Command | Kaam |
 |---|---|
-| `/batch` | Batch mode ON — ab videos bhejo |
-| `/done` | Batch khatam → link milega |
+| `/batch` | Batch mode ON — saari files ek saath bhejo (silent) |
+| `/done` | Batch khatam → direct link |
+| `/status` | Kitni files collect hui |
 | `/cancel` | Batch cancel |
+| `/single` | Single mode — har file ka apna link |
 | `/link` | Single file ka link (reply karke) |
+| `/dev` | Developer info |
 | `/panel` | Full admin panel |
 | `/stats` | Statistics |
 | `/broadcast` | Sab users ko msg (reply karke) |
@@ -128,7 +131,24 @@ Bas ho gaya. Bot ko `/start` bhejo.
 | `/id` | ID nikalo |
 
 ### User
-`/start` · `/help` — bas. Baaki sab link se chalta hai.
+`/start` · `/help` · `/dev` — bas. Baaki sab link se chalta hai.
+
+---
+
+## ⚡ Batch Mode — silent & fast
+
+```
+/batch                    →  "batch mode on" (ek message)
+[50 files ek saath bhejo] →  kuch reply nahi, chup-chaap save
+/done                     →  direct link ✓
+```
+
+Bot har file par reply **nahi** karta — isliye 50 files bhi turant handle
+ho jaati hain, na flood-wait, na chat me spam.
+
+`/status` se beech me check kar sakte ho kitni hui.
+
+**Single mode** (`/single`) — har file ka apna alag link turant.
 
 ---
 
@@ -195,6 +215,17 @@ filestore-bot/
 ├── requirements.txt
 └── .env.example
 ```
+
+---
+
+## 👨‍💻 Developer
+
+**[Harsh Upadhyay](https://new-profotilo-flame.vercel.app)** — Full Stack Web Developer
+BCA 1st sem · Faridabad, Haryana 🇮🇳
+
+React · Node.js · Express · MongoDB · MySQL · TailwindCSS · TypeScript · Next.js
+
+Bot me `/dev` ya Start menu ka **👨‍💻 Developer** button.
 
 ---
 

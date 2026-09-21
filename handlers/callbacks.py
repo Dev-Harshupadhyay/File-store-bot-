@@ -47,6 +47,8 @@ async def user_cb(client, q: CallbackQuery):
     if action == "help":
         await _edit(q, T.HELP_USER.format(line=T.LINE, ad=ad),
                     IKM([[grey("« ʙᴀᴄᴋ", callback_data="u:home")]]))
+    elif action == "dev":
+        await _edit(q, T.DEV.format(line=T.LINE), kb.dev_kb())
     elif action == "about":
         await _edit(q, T.ABOUT.format(line=T.LINE, bot=config.BOT_NAME,
                                       ver=config.BOT_VERSION),

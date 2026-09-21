@@ -1,8 +1,10 @@
 """
-/batch flow — admin multiple videos bhejta hai -> /done -> ek link milta hai.
+/batch  — silent bulk collect, /done par direct link
+/single — har file ka apna alag link
 """
 import asyncio
 import logging
+import time
 
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
@@ -15,8 +17,8 @@ from utils.helpers import human_time, make_code, no_preview
 
 log = logging.getLogger("batch")
 
-MEDIA = filters.document | filters.video | filters.audio | filters.photo | \
-        filters.animation | filters.voice | filters.video_note | filters.sticker
+MEDIA = (filters.document | filters.video | filters.audio | filters.photo |
+         filters.animation | filters.voice | filters.video_note | filters.sticker)
 
 
 def admin_only(_, __, m):
@@ -26,15 +28,29 @@ def admin_only(_, __, m):
 ADMIN = filters.create(admin_only)
 
 
+# ───────────────────────────── MODE COMMANDS ─────────────────────────────
 @Client.on_message(filters.command("batch") & filters.private & ADMIN)
 async def batch_start(client, message):
+    """Batch mode ON — ab saari files silently collect hongi."""
     uid = message.from_user.id
     client.batch_cache[uid] = []
-    await message.reply(
-        T.BATCH_START.format(line=T.LINE),
-        reply_markup=kb.batch_collect_kb(0),
-    )
+    client.batch_mode = getattr(client, "batch_mode", {})
+    client.batch_mode[uid] = "batch"
+
+    await message.reply(T.BATCH_START.format(line=T.LINE), **no_preview())
     db.log(uid, "batch_start")
+
+
+@Client.on_message(filters.command("single") & filters.private & ADMIN)
+async def single_mode(client, message):
+    """Single mode — har file ka turant alag link."""
+    uid = message.from_user.id
+    client.batch_cache.pop(uid, None)
+    client.batch_mode = getattr(client, "batch_mode", {})
+    client.batch_mode[uid] = "single"
+
+    await message.reply(T.SINGLE_MODE.format(line=T.LINE), **no_preview())
+    db.log(uid, "single_mode")
 
 
 @Client.on_message(filters.command(["done", "finish"]) & filters.private & ADMIN)
@@ -44,23 +60,39 @@ async def batch_done(client, message):
 
 @Client.on_message(filters.command("cancel") & filters.private & ADMIN)
 async def batch_cancel(client, message):
-    client.batch_cache.pop(message.from_user.id, None)
-    client.await_input.pop(message.from_user.id, None)
-    await message.reply("✘ ʙᴀᴛᴄʜ ᴄᴀɴᴄᴇʟʟᴇᴅ.")
+    uid = message.from_user.id
+    n = len(client.batch_cache.pop(uid, []))
+    client.await_input.pop(uid, None)
+    if hasattr(client, "batch_mode"):
+        client.batch_mode.pop(uid, None)
+    await message.reply(f"✘ ʙᴀᴛᴄʜ ᴄᴀɴᴄᴇʟʟᴇᴅ · <code>{n}</code> ғɪʟᴇs ᴅɪsᴄᴀʀᴅ.")
+
+
+# ───────────────────────────── LINK BANAO ─────────────────────────────
+async def _make_link(client, uid, msg_ids, title=""):
+    """Batch DB me save karke link return karo."""
+    code = make_code(9)
+    db.save_batch(code, uid, msg_ids, title=title or f"Batch {len(msg_ids)} files",
+                  protect=1 if db.get_bool("protect") else 0)
+    return code, f"https://t.me/{client.username}?start={code}"
 
 
 async def _finish(client, uid, message):
+    """/done — direct link, koi button spam nahi."""
     ids = client.batch_cache.get(uid)
     if not ids:
-        return await message.reply("✘ ᴋᴏɪ ғɪʟᴇ ɴᴀʜɪ ᴍɪʟɪ. ᴘᴇʜʟᴇ <code>/batch</code> ᴋᴀʀᴋᴇ ғɪʟᴇs ʙʜᴇᴊᴏ.")
+        return await message.reply(
+            f"✘ ᴋᴏɪ ғɪʟᴇ ɴᴀʜɪ ᴍɪʟɪ.\n"
+            f"ᴘᴇʜʟᴇ <code>/batch</code> ᴋᴀʀᴏ, ғɪʀ ғɪʟᴇs ʙʜᴇᴊᴏ."
+        )
 
-    code = make_code(9)
-    db.save_batch(code, uid, ids, title=f"Batch {len(ids)} files",
-                  protect=1 if db.get_bool("protect") else 0)
+    code, link = await _make_link(client, uid, ids)
     client.batch_cache.pop(uid, None)
+    if hasattr(client, "batch_mode"):
+        client.batch_mode.pop(uid, None)
 
-    link = f"https://t.me/{client.username}?start={code}"
-    ad = human_time(db.get_int("auto_delete", 1800)) if db.get_bool("auto_delete_on", True) else "ᴏғғ"
+    ad = human_time(db.get_int("auto_delete", 1800)) \
+        if db.get_bool("auto_delete_on", True) else "ᴏғғ"
 
     await message.reply(
         T.BATCH_DONE.format(line=T.LINE, n=len(ids), code=code, link=link, ad=ad),
@@ -79,58 +111,85 @@ async def _finish(client, uid, message):
         pass
 
 
+# ───────────────────────────── MEDIA COLLECT ─────────────────────────────
 @Client.on_message(MEDIA & filters.private & ADMIN, group=1)
 async def collect_media(client, message):
-    """Batch mode ON -> collect. OFF -> instant single link."""
+    """
+    Batch mode  -> silently DB channel me store, koi reply nahi (fast).
+    Single mode -> turant apna link.
+    """
     uid = message.from_user.id
 
-    # panel text input mode me media ignore
+    # panel text-input chal raha hai to media ignore
     if client.await_input.get(uid):
         return
 
+    in_batch = uid in client.batch_cache
+
+    # ── DB channel me store ──
     try:
         stored = await message.copy(config.DB_CHANNEL)
     except FloodWait as e:
         await asyncio.sleep(e.value + 1)
-        stored = await message.copy(config.DB_CHANNEL)
+        try:
+            stored = await message.copy(config.DB_CHANNEL)
+        except Exception as err:
+            if not in_batch:
+                await message.reply(f"✘ sᴛᴏʀᴇ ғᴀɪʟ: <code>{err}</code>")
+            return
     except Exception as e:
-        return await message.reply(f"✘ sᴛᴏʀᴇ ғᴀɪʟ: <code>{e}</code>")
-
-    if uid in client.batch_cache:
-        client.batch_cache[uid].append(stored.id)
-        n = len(client.batch_cache[uid])
-        if n % 3 == 0 or n == 1:
-            try:
-                await message.reply(T.BATCH_ADDED.format(n=n),
-                                    reply_markup=kb.batch_collect_kb(n))
-            except Exception:
-                pass
+        log.warning("store fail: %s", e)
+        if not in_batch:
+            await message.reply(f"✘ sᴛᴏʀᴇ ғᴀɪʟ: <code>{e}</code>")
         return
 
-    # single file -> turant link
-    code = make_code(9)
-    db.save_batch(code, uid, [stored.id], title="Single file",
-                  protect=1 if db.get_bool("protect") else 0)
-    link = f"https://t.me/{client.username}?start={code}"
+    # ── BATCH MODE: chup-chaap collect ──
+    if in_batch:
+        client.batch_cache[uid].append(stored.id)
+        return                      # ← koi reply nahi, isliye tez
+
+    # ── SINGLE MODE: turant link ──
+    code, link = await _make_link(client, uid, [stored.id], "Single file")
     ad = human_time(db.get_int("auto_delete", 1800))
     await message.reply(
-        T.BATCH_DONE.format(line=T.LINE, n=1, code=code, link=link, ad=ad),
-        reply_markup=kb.link_kb(link, code), **no_preview(),
+        T.SINGLE_DONE.format(line=T.LINE, code=code, link=link, ad=ad),
+        reply_markup=kb.link_kb(link, code),
+        **no_preview(),
     )
 
 
+@Client.on_message(filters.command("status") & filters.private & ADMIN)
+async def batch_status(client, message):
+    """Abhi kitni files collect hui hain."""
+    uid = message.from_user.id
+    ids = client.batch_cache.get(uid)
+    if ids is None:
+        return await message.reply(
+            f"▪️ ʙᴀᴛᴄʜ ᴍᴏᴅᴇ <b>ᴏғғ</b> ʜᴀɪ.\n<code>/batch</code> sᴇ ᴏɴ ᴋᴀʀᴏ."
+        )
+    await message.reply(
+        f"<b>◆ ʙᴀᴛᴄʜ sᴛᴀᴛᴜs</b>\n{T.LINE}\n"
+        f"▪️ ᴄᴏʟʟᴇᴄᴛᴇᴅ: <code>{len(ids)}</code> ғɪʟᴇs\n"
+        f"{T.LINE}\n<code>/done</code> — ʟɪɴᴋ ʟᴏ · <code>/cancel</code> — ᴄᴀɴᴄᴇʟ"
+    )
+
+
+# ───────────────────────────── SINGLE FILE (reply) ─────────────────────────────
 @Client.on_message(filters.command("link") & filters.private & ADMIN)
 async def single_link(client, message):
     if not message.reply_to_message:
         return await message.reply("↩️ ᴋɪsɪ ғɪʟᴇ ᴘᴇ ʀᴇᴘʟʏ ᴋᴀʀᴋᴇ <code>/link</code> ʟɪᴋʜᴏ.")
-    stored = await message.reply_to_message.copy(config.DB_CHANNEL)
-    code = make_code(9)
-    db.save_batch(code, message.from_user.id, [stored.id], title="Single file")
-    link = f"https://t.me/{client.username}?start={code}"
+    try:
+        stored = await message.reply_to_message.copy(config.DB_CHANNEL)
+    except Exception as e:
+        return await message.reply(f"✘ sᴛᴏʀᴇ ғᴀɪʟ: <code>{e}</code>")
+
+    code, link = await _make_link(client, message.from_user.id, [stored.id], "Single file")
     ad = human_time(db.get_int("auto_delete", 1800))
     await message.reply(
-        T.BATCH_DONE.format(line=T.LINE, n=1, code=code, link=link, ad=ad),
-        reply_markup=kb.link_kb(link, code), **no_preview(),
+        T.SINGLE_DONE.format(line=T.LINE, code=code, link=link, ad=ad),
+        reply_markup=kb.link_kb(link, code),
+        **no_preview(),
     )
 
 

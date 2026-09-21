@@ -247,3 +247,13 @@ async def on_join_request(client, request):
         log.info("join request: %s -> %s", request.from_user.id, request.chat.id)
     except Exception as e:
         log.warning("join request save fail: %s", e)
+
+
+@Client.on_message(filters.command(["dev", "developer", "about"]) & filters.private)
+async def dev_cmd(client, message):
+    """Developer info — Harsh Upadhyay."""
+    await message.reply(
+        T.DEV.format(line=T.LINE),
+        reply_markup=kb.dev_kb(),
+        **no_preview(),
+    )

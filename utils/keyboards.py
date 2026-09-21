@@ -69,7 +69,9 @@ def admin_panel(user_id=0):
          green(f"↻ {tc('Restart')}", callback_data="ap:restart")],
 
         [blue(f"✦ {tc('System')}", callback_data="ap:system"),
-         red(f"✕ {tc('Close')}", callback_data="ap:close")],
+         green(f"👨‍💻 {tc('Developer')}", callback_data="u:dev")],
+
+        [red(f"✕ {tc('Close')}", callback_data="ap:close")],
     ]
     return IKM(rows)
 
@@ -180,7 +182,8 @@ def start_kb(is_adm=False):
     _sync_colors()
     import config
     rows = [[blue(f"◈ {tc('How To Use')}", callback_data="u:help"),
-             blue(f"◉ {tc('About')}", callback_data="u:about")]]
+             blue(f"◉ {tc('About')}", callback_data="u:about")],
+            [green(f"👨‍💻 {tc('Developer')}", callback_data="u:dev")]]
     line = []
     if config.UPDATES_LINK:
         line.append(green(f"⚑ {tc('Updates')}", url=config.UPDATES_LINK))
@@ -202,6 +205,18 @@ def fsub_join_kb(channels, code=""):
             rows.append([blue(label, url=c["invite"])])
     rows.append([green(f"↻ {tc('Try Again')}", callback_data=f"fs:retry:{code}")])
     return IKM(rows)
+
+
+def dev_kb():
+    """Developer section — portfolio link ke saath."""
+    _sync_colors()
+    from pyrogram.types import InlineKeyboardMarkup
+    return InlineKeyboardMarkup([
+        [green("🌐 ᴠɪsɪᴛ ᴘᴏʀᴛғᴏʟɪᴏ", url="https://new-profotilo-flame.vercel.app")],
+        [blue("✉️ ᴇᴍᴀɪʟ", url="mailto:harsh48227@gmail.com"),
+         blue("💼 ʜɪʀᴇ ᴍᴇ", url="https://tally.so/r/QKpNqX")],
+        [grey(f"« {tc('Back')}", callback_data="u:home")],
+    ])
 
 
 def close_only():
