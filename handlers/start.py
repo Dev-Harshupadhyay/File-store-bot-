@@ -7,8 +7,7 @@ import logging
 from pyrogram import Client, filters
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait, UserIsBlocked, UserNotParticipant
-from pyrogram.types import InlineKeyboardButton as IKB
-from pyrogram.types import InlineKeyboardMarkup as IKM, Message
+from pyrogram.types import Message
 
 import config
 import database as db
@@ -74,7 +73,7 @@ async def _auto_delete(client, chat_id, msg_ids, delay, count):
         await client.send_message(
             chat_id,
             T.DELETED.format(line=T.LINE, n=deleted),
-            reply_markup=IKM([[IKB("↻ ɢᴇᴛ ғɪʟᴇs ᴀɢᴀɪɴ", callback_data="noop")]]),
+            reply_markup=kb.get_again_kb(),
         )
     except Exception:
         pass

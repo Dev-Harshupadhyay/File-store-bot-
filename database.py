@@ -106,6 +106,7 @@ _DEFAULTS = {
     "force_sub": "1" if config.FORCE_SUB else "0",
     "maintenance": "0",
     "approval": "1",
+    "colors": "1",
     "start_photo": config.START_PHOTO,
     "start_text": "",
     "caption": "",

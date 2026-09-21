@@ -151,6 +151,23 @@ Bas ho gaya. Bot ko `/start` bhejo.
 
 Har button live hai — koi dummy nahi.
 
+### 🎨 Coloured Buttons
+
+Kurigram ke `ButtonStyle` se buttons me asli colour aata hai (Bot API 9.4 / MTProto layer 227+):
+
+| Colour | Kahan | Kyun |
+|---|---|---|
+| 🔵 **Blue** (`PRIMARY`) | Stats, Users, Files, Settings | normal actions |
+| 🟢 **Green** (`SUCCESS`) | Done, Broadcast, Backup, Add Admin, Open Link | positive actions |
+| 🔴 **Red** (`DANGER`) | Ban, Revoke, Close, Maintenance, Security | destructive / warning |
+| ⚪ **Grey** (`DEFAULT`) | Back | neutral |
+
+Toggle buttons apne state ke hisaab se rang badalte hain — `ON` pe green, `OFF` pe red.
+
+Colours band karne ke liye: `COLOR_BUTTONS=false` env var, ya panel → Settings → 🎨 Colours.
+
+> Purane Telegram clients (Feb 2026 se pehle) wahi buttons bina colour ke dikhayenge — kuch tootega nahi.
+
 ---
 
 ## 📁 File Structure
@@ -167,6 +184,7 @@ filestore-bot/
 │   ├── admin.py         # /panel /stats /ban /broadcast /backup...
 │   └── callbacks.py     # saare inline buttons
 ├── utils/
+│   ├── buttons.py       # coloured button helpers (blue/green/red)
 │   ├── fonts.py         # sᴍᴀʟʟ ᴄᴀᴘs converter
 │   ├── keyboards.py     # panel layouts
 │   ├── texts.py         # saare messages

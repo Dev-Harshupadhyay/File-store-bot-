@@ -61,6 +61,7 @@ SESSION_DIR = DATA_DIR
 AUTO_DELETE = _int("AUTO_DELETE", 1800)       # seconds (1800 = 30 minute)
 PROTECT_CONTENT = _bool("PROTECT_CONTENT", False)
 FORCE_SUB = _bool("FORCE_SUB", False)
+COLOR_BUTTONS = _bool("COLOR_BUTTONS", True)
 MAINTENANCE = False
 
 WORKERS = _int("WORKERS", 8)

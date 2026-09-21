@@ -8,13 +8,13 @@ import time
 
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery
-from pyrogram.types import InlineKeyboardButton as IKB
 from pyrogram.types import InlineKeyboardMarkup as IKM
 
 import config
 import database as db
 from handlers.admin import do_broadcast, panel_text, stats_text
 from utils import keyboards as kb
+from utils.buttons import blue, green, grey, red
 from utils import texts as T
 from utils.helpers import ago, human_size, human_time, uptime_since
 
@@ -46,11 +46,11 @@ async def user_cb(client, q: CallbackQuery):
     ad = human_time(db.get_int("auto_delete", 1800))
     if action == "help":
         await _edit(q, T.HELP_USER.format(line=T.LINE, ad=ad),
-                    IKM([[IKB("« ʙᴀᴄᴋ", callback_data="u:home")]]))
+                    IKM([[grey("« ʙᴀᴄᴋ", callback_data="u:home")]]))
     elif action == "about":
         await _edit(q, T.ABOUT.format(line=T.LINE, bot=config.BOT_NAME,
                                       ver=config.BOT_VERSION),
-                    IKM([[IKB("« ʙᴀᴄᴋ", callback_data="u:home")]]))
+                    IKM([[grey("« ʙᴀᴄᴋ", callback_data="u:home")]]))
     elif action == "home":
         is_adm = db.is_admin(q.from_user.id)
         if is_adm:
@@ -309,7 +309,7 @@ async def panel_cb(client, q: CallbackQuery):
             txt += f"• <code>{r['actor']}</code> {r['action']} · {r['detail'][:28]} · {ago(r['ts'])}\n"
         if not rows:
             txt += "ᴇᴍᴘᴛʏ"
-        await _edit(q, txt, kb.back(extra=[[IKB("🗑 ᴄʟᴇᴀʀ ʟᴏɢs", callback_data="ok:clearlogs:")]]))
+        await _edit(q, txt, kb.back(extra=[[red("🗑 ᴄʟᴇᴀʀ ʟᴏɢs", callback_data="ok:clearlogs:")]]))
 
     elif action == "backup":
         await q.answer("⏳ ʙᴀᴄᴋᴜᴘ...")
@@ -330,8 +330,8 @@ async def panel_cb(client, q: CallbackQuery):
                f"◇ ᴀᴅᴍɪɴs: <code>{len(db.admin_ids())}</code>\n{T.LINE}\n"
                f"<i>ᴘʀᴏᴛᴇᴄᴛ ᴏɴ = ᴜsᴇʀ ғᴏʀᴡᴀʀᴅ / sᴀᴠᴇ ɴᴀʜɪ ᴋᴀʀ ᴘᴀᴀᴇɢᴀ</i>")
         await _edit(q, txt, kb.back(extra=[
-            [IKB("✿ ᴘʀᴏᴛᴇᴄᴛ ᴛᴏɢɢʟᴇ", callback_data="tg:protect"),
-             IKB("⚑ ғsᴜʙ ᴛᴏɢɢʟᴇ", callback_data="tg:force_sub")]]))
+            [blue("✿ ᴘʀᴏᴛᴇᴄᴛ ᴛᴏɢɢʟᴇ", callback_data="tg:protect"),
+             blue("⚑ ғsᴜʙ ᴛᴏɢɢʟᴇ", callback_data="tg:force_sub")]]))
 
     elif action == "maint":
         new = db.toggle("maintenance")
@@ -347,8 +347,11 @@ async def panel_cb(client, q: CallbackQuery):
                f"▲ sᴛᴀʀᴛ ᴘʜᴏᴛᴏ: <code>{'sᴇᴛ' if db.get('start_photo') else 'ɴᴏɴᴇ'}</code>\n"
                f"📁 sᴛᴏʀᴀɢᴇ: <code>{config.DATA_DIR}</code>\n{T.LINE}")
         await _edit(q, txt, kb.back(extra=[
-            [IKB("❖ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ", callback_data="ap:autodel"),
-             IKB("▲ sᴛᴀʀᴛ ᴘʜᴏᴛᴏ", callback_data="ap:photo")]]))
+            [blue("❖ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ", callback_data="ap:autodel"),
+             blue("▲ sᴛᴀʀᴛ ᴘʜᴏᴛᴏ", callback_data="ap:photo")],
+            [green("🎨 ᴄᴏʟᴏᴜʀs: ᴏɴ", callback_data="tg:colors")
+             if db.get_bool("colors", True) else
+             grey("🎨 ᴄᴏʟᴏᴜʀs: ᴏғғ", callback_data="tg:colors")]]))
 
     elif action == "photo":
         client.await_input[uid] = "photo"

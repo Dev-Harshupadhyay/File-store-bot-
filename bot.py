@@ -70,6 +70,21 @@ class FileStoreBot(Client):
         except Exception as e:
             log.warning("web server skip: %s", e)
 
+        # coloured buttons status
+        try:
+            import database as _db
+            from utils import buttons as _btn
+            _db.set("colors", "1" if config.COLOR_BUTTONS else "0")
+            _btn.set_colors(config.COLOR_BUTTONS)
+            st = _btn.status()
+            log.info("🎨 coloured buttons: lib=%s enabled=%s",
+                     st["library_supports"], st["enabled"])
+            if not st["library_supports"]:
+                log.warning("⚠️  library purani hai — buttons plain dikhenge. "
+                            "requirements.txt me kurigram>=2.2.26 chahiye.")
+        except Exception as e:
+            log.warning("colour setup skip: %s", e)
+
         log.info("🤖 @%s live · data dir: %s", self.username, config.DATA_DIR)
 
         try:
