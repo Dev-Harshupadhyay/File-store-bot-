@@ -13,6 +13,7 @@ import config
 import database as db
 from utils import keyboards as kb
 from utils import texts as T
+from utils import fsub
 from utils.helpers import human_time, make_code, no_preview
 
 log = logging.getLogger("batch")
@@ -51,6 +52,8 @@ async def single_mode(client, message):
         return
     if db.get_bool("maintenance") and not db.is_admin(uid):
         return await message.reply(T.MAINT_MSG.format(line=T.LINE))
+    if await fsub.guard(client, message):
+        return
     client.batch_cache.pop(uid, None)
     client.batch_mode = getattr(client, "batch_mode", {})
     client.batch_mode[uid] = "single"
@@ -136,6 +139,10 @@ async def collect_media(client, message):
     if client.await_input.get(uid):
         return
 
+    # ⚑ force sub — bina join kiye link nahi milega
+    if await fsub.guard(client, message):
+        return
+
     # non-admin ke liye batch mode hai hi nahi
     in_batch = db.is_admin(uid) and uid in client.batch_cache
 
@@ -191,6 +198,8 @@ async def batch_status(client, message):
 @Client.on_message(filters.command("link") & filters.private)
 async def single_link(client, message):
     if db.is_banned(message.from_user.id):
+        return
+    if await fsub.guard(client, message):
         return
     if not message.reply_to_message:
         return await message.reply("↩️ ᴋɪsɪ ғɪʟᴇ ᴘᴇ ʀᴇᴘʟʏ ᴋᴀʀᴋᴇ <code>/link</code> ʟɪᴋʜᴏ.")

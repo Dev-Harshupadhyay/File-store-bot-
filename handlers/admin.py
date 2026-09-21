@@ -320,19 +320,53 @@ async def addfsub_cmd(client, message):
         **no_preview())
 
 
-@Client.on_message(filters.command("fsublist") & filters.private & ADMIN)
+@Client.on_message(filters.command(["fsublist", "fsubtest"]) & filters.private & ADMIN)
 async def fsublist_cmd(client, message):
+    """Channels list + LIVE check ki bot wahan admin hai ya nahi."""
     rows = db.fsub_list()
+    on = db.get_bool("force_sub")
+
     if not rows:
-        return await message.reply("⚑ ᴋᴏɪ ғᴏʀᴄᴇ sᴜʙ ᴄʜᴀɴɴᴇʟ ɴᴀʜɪ.\n<code>/addfsub</code> sᴇ ᴀᴅᴅ ᴋᴀʀᴏ.")
+        return await message.reply(
+            f"<b>⚑ ғᴏʀᴄᴇ sᴜʙ</b>\n{T.LINE}\n"
+            f"sᴛᴀᴛᴜs: <code>{'ᴏɴ' if on else 'ᴏғғ'}</code>\n"
+            f"ᴄʜᴀɴɴᴇʟs: <code>0</code>\n{T.LINE}\n"
+            f"⚠️ ᴋᴏɪ ᴄʜᴀɴɴᴇʟ ᴀᴅᴅ ɴᴀʜɪ ʜᴀɪ — ɪsʟɪʏᴇ ᴋɪsɪ ᴘᴇ ғᴏʀᴄᴇ ᴊᴏɪɴ ɴᴀʜɪ ʟᴀɢᴇɢᴀ.\n\n"
+            f"<code>/addfsub -100xxxxxxxxxx</code>")
+
+    status = await message.reply("⏳ ʟɪᴠᴇ ᴄʜᴇᴄᴋ...")
+
     txt = (f"<b>⚑ ғᴏʀᴄᴇ sᴜʙ ᴄʜᴀɴɴᴇʟs ({len(rows)})</b>\n{T.LINE}\n"
-           f"sᴛᴀᴛᴜs: <code>{'ᴏɴ' if db.get_bool('force_sub') else 'ᴏғғ'}</code>\n{T.LINE}\n")
+           f"sᴛᴀᴛᴜs: <code>{'ᴏɴ ✓' if on else 'ᴏғғ ✘'}</code>\n{T.LINE}\n")
+
+    broken = 0
     for r in rows:
         mode = (r["mode"] if "mode" in r.keys() else "join") or "join"
+        try:
+            me = await client.get_chat_member(r["chat_id"], "me")
+            if me.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+                mark = "✓ ᴀᴅᴍɪɴ"
+            else:
+                mark = "✘ ᴀᴅᴍɪɴ ɴᴀʜɪ"
+                broken += 1
+        except Exception as e:
+            mark = f"✘ {str(e)[:26]}"
+            broken += 1
         txt += (f"• <b>{r['title']}</b>\n"
-                f"  <code>{r['chat_id']}</code> · {mode}\n")
-    txt += f"{T.LINE}\n<code>/delfsub &lt;id&gt;</code> sᴇ ʜᴀᴛᴀᴏ"
-    await message.reply(txt, **no_preview())
+                f"  <code>{r['chat_id']}</code>\n"
+                f"  {mark} · ᴍᴏᴅᴇ: {mode}\n")
+
+    txt += T.LINE + "\n"
+    if not on:
+        txt += ("⚠️ <b>ғᴏʀᴄᴇ sᴜʙ ᴏғғ ʜᴀɪ</b> — ᴄʜᴀɴɴᴇʟ ᴀᴅᴅ ʜᴏɴᴇ ᴋᴇ ʙᴀᴀᴠᴀᴊᴏᴏᴅ ᴋɪsɪ ᴘᴇ\n"
+                "ʟᴀɢᴜ ɴᴀʜɪ ʜᴏɢᴀ. <code>/panel</code> → <b>⚑ ғ-sᴜʙ</b> sᴇ ᴏɴ ᴋᴀʀᴏ.\n")
+    if broken:
+        txt += (f"⚠️ <code>{broken}</code> ᴄʜᴀɴɴᴇʟ ᴍᴇ ʙᴏᴛ ᴀᴅᴍɪɴ ɴᴀʜɪ — ᴡᴏ sᴋɪᴘ ʜᴏ ʀᴀʜᴇ ʜᴀɪɴ.\n")
+    if on and not broken:
+        txt += "✓ sᴀʙ sᴀʜɪ — ɴᴀʏᴇ ᴜsᴇʀ ᴋᴏ ᴊᴏɪɴ ᴋᴀʀɴᴀ ᴘᴀᴅᴇɢᴀ.\n"
+    txt += f"{T.LINE}\n<i>ɴᴏᴛᴇ: ᴀᴅᴍɪɴs ᴘᴇ ғᴏʀᴄᴇ sᴜʙ ɴᴀʜɪ ʟᴀɢᴛᴀ — ᴅᴏᴏsʀɪ ɪᴅ sᴇ ᴛᴇsᴛ ᴋᴀʀᴏ.</i>"
+
+    await status.edit(txt, **no_preview())
 
 
 @Client.on_message(filters.command("delfsub") & filters.private & ADMIN)

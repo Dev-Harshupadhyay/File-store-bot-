@@ -13,50 +13,10 @@ import config
 import database as db
 from utils import keyboards as kb
 from utils import texts as T
+from utils import fsub
 from utils.helpers import human_time, no_preview, progress_bar
 
 log = logging.getLogger("start")
-
-
-# user in channel maana jayega agar in status me ho
-_JOINED = {
-    ChatMemberStatus.MEMBER,
-    ChatMemberStatus.ADMINISTRATOR,
-    ChatMemberStatus.OWNER,
-    ChatMemberStatus.RESTRICTED,   # restricted but still member
-}
-
-
-async def _check_fsub(client, user_id):
-    """Jin channels me user nahi hai unki list return karta hai."""
-    if not db.get_bool("force_sub"):
-        return []
-
-    # admin ko force sub se chhoot
-    if db.is_admin(user_id):
-        return []
-
-    pending = []
-    for ch in db.fsub_list():
-        chat_id = ch["chat_id"]
-        mode = (ch["mode"] if "mode" in ch.keys() else "join") or "join"
-
-        # request mode: pending join request bhi valid maana jata hai
-        if mode == "request" and db.has_join_request(chat_id, user_id):
-            continue
-
-        try:
-            member = await client.get_chat_member(chat_id, user_id)
-            if member.status in _JOINED:
-                continue
-            pending.append(dict(ch))          # LEFT / BANNED
-        except UserNotParticipant:
-            pending.append(dict(ch))
-        except Exception as e:
-            # bot channel me admin nahi hai ya channel delete ho gaya
-            log.warning("fsub check fail %s: %s — skipping", chat_id, e)
-            continue                          # user ko block mat karo
-    return pending
 
 
 async def _auto_delete(client, chat_id, msg_ids, delay, count):
@@ -82,16 +42,24 @@ async def _auto_delete(client, chat_id, msg_ids, delay, count):
 async def deliver_batch(client, message, code, override_user=None):
     """Batch code se saari files bhejo."""
     user_id = override_user or message.from_user.id
+
+    async def say(text, **kw):
+        """Safe reply — retry ke baad original message delete ho chuka hota hai."""
+        try:
+            return await client.send_message(user_id, text, **kw)
+        except Exception:
+            return await message.reply(text, **kw)
+
     batch = db.get_batch(code)
 
     if not batch or batch["revoked"]:
-        return await message.reply(T.LINK_DEAD)
+        return await say(T.LINK_DEAD)
 
-    pending = await _check_fsub(client, user_id)
-    if pending:
-        return await message.reply(
+    chans = await fsub.pending(client, user_id)
+    if chans:
+        return await say(
             T.FSUB_MSG.format(line=T.LINE),
-            reply_markup=kb.fsub_join_kb(pending, code),
+            reply_markup=kb.fsub_join_kb(chans, code),
         )
 
     ids = batch["msg_ids"]
@@ -99,9 +67,7 @@ async def deliver_batch(client, message, code, override_user=None):
     protect = bool(batch["protect"]) or db.get_bool("protect")
     delay = db.get_int("auto_delete", 1800) if db.get_bool("auto_delete_on", True) else 0
 
-    status = await message.reply(
-        T.SENDING.format(n=total, bar=progress_bar(0, total))
-    )
+    status = await say(T.SENDING.format(n=total, bar=progress_bar(0, total)))
 
     sent_ids = []
     for i, mid in enumerate(ids, 1):
@@ -182,6 +148,10 @@ async def start_cmd(client, message: Message):
         return await deliver_batch(client, message, parts[1].strip())
 
     # ── plain /start ─────────────────────────────────────────
+    # force sub yahan bhi lagta hai — warna user bina join kiye bot use kar leta
+    if await fsub.guard(client, message):
+        return
+
     ad = human_time(db.get_int("auto_delete", 1800)) if db.get_bool("auto_delete_on", True) else "ᴏғғ"
     is_adm = db.is_admin(user.id)
 
@@ -208,6 +178,8 @@ async def start_cmd(client, message: Message):
 
 @Client.on_message(filters.command("help") & filters.private)
 async def help_cmd(client, message: Message):
+    if await fsub.guard(client, message):
+        return
     ad = human_time(db.get_int("auto_delete", 1800))
     if db.is_admin(message.from_user.id):
         await message.reply(T.HELP_ADMIN.format(line=T.LINE), reply_markup=kb.close_only())
@@ -218,25 +190,41 @@ async def help_cmd(client, message: Message):
 
 @Client.on_callback_query(filters.regex(r"^fs:retry:"))
 async def fsub_retry_cb(client, q):
-    """'Try Again' dabane par dobara check — join kiya to files bhej do."""
+    """'Try Again' — dobara check. Join ho gaya to kaam turant aage badhao."""
+    await q.answer()
     code = q.data.split(":", 2)[2]
     user_id = q.from_user.id
 
-    pending = await _check_fsub(client, user_id)
-    if pending:
+    chans = await fsub.pending(client, user_id)
+    if chans:
+        # abhi bhi baaki — kaunse channel, wo bhi bata do
+        left = ", ".join(c["title"][:18] for c in chans[:3])
         return await q.answer(
-            "✘ ᴀʙʜɪ ʙʜɪ ᴊᴏɪɴ ɴᴀʜɪ ᴋɪʏᴀ!\nᴘᴇʜʟᴇ sᴀᴀʀᴇ ᴄʜᴀɴɴᴇʟ ᴊᴏɪɴ ᴋᴀʀᴏ.",
+            f"✘ ᴀʙʜɪ ʙʜɪ ᴊᴏɪɴ ɴᴀʜɪ ᴋɪʏᴀ!\n\nʙᴀᴀᴋɪ: {left}\n\n"
+            f"ᴊᴏɪɴ ᴋᴀʀᴋᴇ ᴅᴏʙᴀʀᴀ ᴛʀʏ ᴀɢᴀɪɴ ᴅᴀʙᴀᴏ.",
             show_alert=True,
         )
 
-    await q.answer("✓ ᴛʜᴀɴᴋs! ғɪʟᴇs ʙʜᴇᴊ ʀᴀʜᴀ ʜᴏᴏɴ...")
     try:
         await q.message.delete()
     except Exception:
         pass
 
     if code:
+        # deep link se aaya tha -> files bhej do
+        await client.send_message(user_id, "✓ ᴛʜᴀɴᴋs ғᴏʀ ᴊᴏɪɴɪɴɢ! ғɪʟᴇs ʙʜᴇᴊ ʀᴀʜᴀ ʜᴏᴏɴ...")
         await deliver_batch(client, q.message, code, override_user=user_id)
+    else:
+        # /start ya file upload par roka gaya tha -> ab khula hai
+        await client.send_message(
+            user_id,
+            f"<b>✓ ᴠᴇʀɪғɪᴇᴅ</b>\n{T.LINE}\n"
+            f"sʜᴜᴋʀɪʏᴀ ᴊᴏɪɴ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ!\n"
+            f"ᴀʙ ʙᴏᴛ ᴘᴏᴏʀᴀ ᴜsᴇ ᴋᴀʀ sᴀᴋᴛᴇ ʜᴏ.\n\n"
+            f"▪️ ғɪʟᴇ ʙʜᴇᴊᴏ — ᴛᴜʀᴀɴᴛ ʟɪɴᴋ ᴍɪʟᴇɢᴀ\n"
+            f"▪️ ᴊᴏ ʟɪɴᴋ ᴋʜᴏʟɴᴀ ᴛʜᴀ ᴡᴏ ᴅᴏʙᴀʀᴀ ᴋʜᴏʟᴏ\n{T.LINE}",
+            reply_markup=kb.close_only(),
+        )
 
 
 @Client.on_chat_join_request()
