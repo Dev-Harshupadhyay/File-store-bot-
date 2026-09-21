@@ -7,6 +7,7 @@ import platform
 import time
 
 from pyrogram import Client, filters
+from pyrogram.errors import MessageNotModified
 from pyrogram.types import CallbackQuery
 from pyrogram.types import InlineKeyboardMarkup as IKM
 
@@ -29,19 +30,35 @@ async def _guard(q: CallbackQuery):
 
 
 async def _edit(q, text, markup):
+    """Message edit karo. Photo caption 1024 char limit ke liye fallback."""
     try:
-        if q.message.photo:
-            await q.message.edit_caption(text, reply_markup=markup)
+        if q.message.photo or q.message.video or q.message.document:
+            await q.message.edit_caption(text[:1024], reply_markup=markup)
         else:
-            await q.message.edit_text(text, reply_markup=markup,
-                                      **no_preview())
+            await q.message.edit_text(text, reply_markup=markup, **no_preview())
+        return True
+    except MessageNotModified:
+        return True
     except Exception as e:
-        log.debug("edit skip: %s", e)
+        log.warning("edit fail (%s): %s", type(e).__name__, e)
+        # edit na ho paye to naya message bhej do — user ko kuch to dikhe
+        try:
+            await q.message.reply(text, reply_markup=markup, **no_preview())
+            return True
+        except Exception as e2:
+            log.error("reply fallback bhi fail: %s", e2)
+            return False
 
 
 # ───────────────────────────── USER SIDE ─────────────────────────────
 @Client.on_callback_query(filters.regex(r"^u:"))
 async def user_cb(client, q: CallbackQuery):
+    # pehle answer — warna button "loading" me atka rehta hai
+    try:
+        await q.answer()
+    except Exception:
+        pass
+
     action = q.data.split(":", 1)[1]
     ad = human_time(db.get_int("auto_delete", 1800))
     if action == "help":
@@ -49,6 +66,12 @@ async def user_cb(client, q: CallbackQuery):
                     IKM([[grey("« ʙᴀᴄᴋ", callback_data="u:home")]]))
     elif action == "dev":
         await _edit(q, T.DEV.format(line=T.LINE), kb.dev_kb())
+    elif action == "email":
+        try:
+            await q.answer("✉️  harsh48227@gmail.com\n\nCopy karke mail bhej do!",
+                           show_alert=True)
+        except Exception:
+            pass
     elif action == "about":
         await _edit(q, T.ABOUT.format(line=T.LINE, bot=config.BOT_NAME,
                                       ver=config.BOT_VERSION),
@@ -63,7 +86,6 @@ async def user_cb(client, q: CallbackQuery):
             txt = T.START_USER.format(bot=config.BOT_NAME, line=T.LINE,
                                       mention=q.from_user.mention, ad=ad)
         await _edit(q, txt, kb.start_kb(is_adm))
-    await q.answer()
 
 
 # ───────────────────────────── BATCH BUTTONS ─────────────────────────────

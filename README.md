@@ -103,7 +103,7 @@ Bas ho gaya. Bot ko `/start` bhejo.
 ### Admin
 | Command | Kaam |
 |---|---|
-| `/batch` | Batch mode ON — saari files ek saath bhejo (silent) |
+| `/batch` | Batch mode ON — saari files ek saath bhejo (silent) · **admin only** |
 | `/done` | Batch khatam → direct link |
 | `/status` | Kitni files collect hui |
 | `/cancel` | Batch cancel |
@@ -130,8 +130,16 @@ Bas ho gaya. Bot ko `/start` bhejo.
 | `/restart` | Bot restart |
 | `/id` | ID nikalo |
 
-### User
-`/start` · `/help` · `/dev` — bas. Baaki sab link se chalta hai.
+### User (koi bhi)
+| Command | Kaam |
+|---|---|
+| `/start` | Bot start / link se files lena |
+| `/single` | File bhejo → apna link milega |
+| `/help` | Madad |
+| `/dev` | Developer info |
+
+Normal user **sirf single file** ka link bana sakta hai. Multiple files ka
+ek link (`/batch`) sirf admin ke liye hai — chat id add karne par hi milega.
 
 ---
 

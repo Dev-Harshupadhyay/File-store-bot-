@@ -29,10 +29,12 @@ ADMIN = filters.create(admin_only)
 
 
 # ───────────────────────────── MODE COMMANDS ─────────────────────────────
-@Client.on_message(filters.command("batch") & filters.private & ADMIN)
+@Client.on_message(filters.command("batch") & filters.private)
 async def batch_start(client, message):
-    """Batch mode ON — ab saari files silently collect hongi."""
+    """Batch mode — sirf admin. Normal user ko /single suggest karo."""
     uid = message.from_user.id
+    if not db.is_admin(uid):
+        return await message.reply(T.BATCH_LOCKED.format(line=T.LINE))
     client.batch_cache[uid] = []
     client.batch_mode = getattr(client, "batch_mode", {})
     client.batch_mode[uid] = "batch"
@@ -41,10 +43,14 @@ async def batch_start(client, message):
     db.log(uid, "batch_start")
 
 
-@Client.on_message(filters.command("single") & filters.private & ADMIN)
+@Client.on_message(filters.command("single") & filters.private)
 async def single_mode(client, message):
-    """Single mode — har file ka turant alag link."""
+    """Single mode — har file ka turant alag link. Sabke liye khula."""
     uid = message.from_user.id
+    if db.is_banned(uid):
+        return
+    if db.get_bool("maintenance") and not db.is_admin(uid):
+        return await message.reply(T.MAINT_MSG.format(line=T.LINE))
     client.batch_cache.pop(uid, None)
     client.batch_mode = getattr(client, "batch_mode", {})
     client.batch_mode[uid] = "single"
@@ -112,19 +118,26 @@ async def _finish(client, uid, message):
 
 
 # ───────────────────────────── MEDIA COLLECT ─────────────────────────────
-@Client.on_message(MEDIA & filters.private & ADMIN, group=1)
+@Client.on_message(MEDIA & filters.private, group=1)
 async def collect_media(client, message):
     """
-    Batch mode  -> silently DB channel me store, koi reply nahi (fast).
-    Single mode -> turant apna link.
+    Admin  + batch mode -> silently collect (koi reply nahi, fast)
+    Admin  + single     -> turant link
+    Normal user         -> turant link (single only)
     """
     uid = message.from_user.id
+
+    if db.is_banned(uid):
+        return
+    if db.get_bool("maintenance") and not db.is_admin(uid):
+        return await message.reply(T.MAINT_MSG.format(line=T.LINE))
 
     # panel text-input chal raha hai to media ignore
     if client.await_input.get(uid):
         return
 
-    in_batch = uid in client.batch_cache
+    # non-admin ke liye batch mode hai hi nahi
+    in_batch = db.is_admin(uid) and uid in client.batch_cache
 
     # ── DB channel me store ──
     try:
@@ -175,8 +188,10 @@ async def batch_status(client, message):
 
 
 # ───────────────────────────── SINGLE FILE (reply) ─────────────────────────────
-@Client.on_message(filters.command("link") & filters.private & ADMIN)
+@Client.on_message(filters.command("link") & filters.private)
 async def single_link(client, message):
+    if db.is_banned(message.from_user.id):
+        return
     if not message.reply_to_message:
         return await message.reply("↩️ ᴋɪsɪ ғɪʟᴇ ᴘᴇ ʀᴇᴘʟʏ ᴋᴀʀᴋᴇ <code>/link</code> ʟɪᴋʜᴏ.")
     try:

@@ -213,8 +213,8 @@ def dev_kb():
     from pyrogram.types import InlineKeyboardMarkup
     return InlineKeyboardMarkup([
         [green("🌐 ᴠɪsɪᴛ ᴘᴏʀᴛғᴏʟɪᴏ", url="https://new-profotilo-flame.vercel.app")],
-        [blue("✉️ ᴇᴍᴀɪʟ", url="mailto:harsh48227@gmail.com"),
-         blue("💼 ʜɪʀᴇ ᴍᴇ", url="https://tally.so/r/QKpNqX")],
+        [blue("💼 ʜɪʀᴇ ᴍᴇ", url="https://tally.so/r/QKpNqX"),
+         blue("✉️ ᴇᴍᴀɪʟ", callback_data="u:email")],
         [grey(f"« {tc('Back')}", callback_data="u:home")],
     ])
 
