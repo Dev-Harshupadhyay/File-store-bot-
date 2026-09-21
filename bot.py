@@ -9,6 +9,7 @@ import time
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
+from pyrogram.errors import AuthKeyUnregistered, SessionRevoked
 
 import config
 
@@ -40,14 +41,28 @@ class FileStoreBot(Client):
         self.username = None
         self.batch_cache = {}   # user_id -> [msg_ids]  (batch mode buffer)
         self.await_input = {}   # user_id -> action string (panel text input)
+        self.web_runner = None  # aiohttp health server
 
-    async def start(self):
+    async def start(self, *args, **kwargs):
         missing = config.validate()
         if missing:
             log.error("❌ Missing env vars: %s", ", ".join(missing))
             sys.exit(1)
 
-        await super().start()
+        try:
+            await super().start(*args, **kwargs)
+        except (SessionRevoked, AuthKeyUnregistered):
+            # purani session file kharab — delete karke dobara login
+            import glob
+            for f in glob.glob(os.path.join(config.SESSION_DIR, "*.session*")):
+                try:
+                    os.remove(f)
+                    log.warning("purani session hata di: %s", f)
+                except OSError:
+                    pass
+            log.error("❌ session revoked — restart karo, nayi session banegi")
+            sys.exit(1)
+
         me = await self.get_me()
         self.username = me.username
         self.mention = me.mention
@@ -99,8 +114,13 @@ class FileStoreBot(Client):
         except Exception:
             pass
 
-    async def stop(self, *args):
-        await super().stop()
+    async def stop(self, *args, **kwargs):
+        try:
+            if getattr(self, "web_runner", None):
+                await self.web_runner.cleanup()
+        except Exception:
+            pass
+        await super().stop(*args, **kwargs)
         log.info("Bot stopped.")
 
 

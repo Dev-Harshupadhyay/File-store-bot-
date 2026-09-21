@@ -1,75 +1,69 @@
 """
-Coloured buttons — Kurigram ka ButtonStyle (Bot API 9.4 / MTProto layer 227+).
+Coloured buttons — ButtonStyle (Bot API 9.4 / MTProto layer 227+).
 
-    blue()   -> PRIMARY  (dark blue)  — normal actions
-    green()  -> SUCCESS  (green)      — positive / confirm
-    red()    -> DANGER   (red)        — destructive / warning
-    grey()   -> DEFAULT  (transparent)— neutral
+    blue()   -> PRIMARY  (dark blue)   — normal actions
+    green()  -> SUCCESS  (green)       — positive / confirm
+    red()    -> DANGER   (red)         — destructive / warning
+    grey()   -> DEFAULT  (transparent) — neutral
 
-Agar library purani hai (plain pyrogram) to style silently drop ho jata hai —
-buttons phir bhi kaam karenge, bas rang nahi dikhega. Kuch crash nahi hoga.
+Library me ButtonStyle na ho to style chup-chaap drop ho jata hai —
+button phir bhi banta hai, bas rang nahi dikhta. Crash kabhi nahi hoga.
 """
-from pyrogram.types import InlineKeyboardButton as IKB
+from pyrogram.types import InlineKeyboardButton
 
 # ── style support detect ──────────────────────────────────────────────
 try:
-    from pyrogram import enums
+    from pyrogram.enums import ButtonStyle
 
-    _PRIMARY = enums.ButtonStyle.PRIMARY
-    _DANGER = enums.ButtonStyle.DANGER
-    _SUCCESS = enums.ButtonStyle.SUCCESS
-    _DEFAULT = enums.ButtonStyle.DEFAULT
     STYLES_OK = True
-except (ImportError, AttributeError):  # plain pyrogram / purana fork
-    _PRIMARY = _DANGER = _SUCCESS = _DEFAULT = None
+except ImportError:  # purana pyrogram
+    ButtonStyle = None
     STYLES_OK = False
 
-# panel se colours off karne ke liye (database import circular na ho isliye flag)
+# panel toggle (database import circular na ho isliye module-level flag)
 COLORS_ENABLED = True
 
 
-def _mk(text, style=None, **kw):
-    """IKB banao — style tabhi lagao jab library support kare aur colours on ho."""
+def _mk(text, style, **kw):
+    """InlineKeyboardButton banao — style tabhi jab library support kare."""
+    kw = {k: v for k, v in kw.items() if v is not None}
     if style is not None and STYLES_OK and COLORS_ENABLED:
         try:
-            return IKB(text, style=style, **kw)
+            return InlineKeyboardButton(text, style=style, **kw)
         except TypeError:
             pass
-    return IKB(text, **kw)
+    return InlineKeyboardButton(text, **kw)
 
 
 # ── public helpers ────────────────────────────────────────────────────
-def blue(text, *, callback_data=None, url=None, **kw):
+def blue(text, **kw):
     """Dark blue — normal / main actions."""
-    return _mk(text, _PRIMARY, callback_data=callback_data, url=url, **kw) \
-        if url else _mk(text, _PRIMARY, callback_data=callback_data, **kw)
+    return _mk(text, ButtonStyle.PRIMARY if STYLES_OK else None, **kw)
 
 
-def green(text, *, callback_data=None, url=None, **kw):
-    """Green — positive actions (done, approve, get files)."""
-    return _mk(text, _SUCCESS, callback_data=callback_data, url=url, **kw) \
-        if url else _mk(text, _SUCCESS, callback_data=callback_data, **kw)
+def green(text, **kw):
+    """Green — positive actions (done, approve, backup, open link)."""
+    return _mk(text, ButtonStyle.SUCCESS if STYLES_OK else None, **kw)
 
 
-def red(text, *, callback_data=None, url=None, **kw):
+def red(text, **kw):
     """Red — destructive / warning (ban, revoke, delete, close)."""
-    return _mk(text, _DANGER, callback_data=callback_data, url=url, **kw) \
-        if url else _mk(text, _DANGER, callback_data=callback_data, **kw)
+    return _mk(text, ButtonStyle.DANGER if STYLES_OK else None, **kw)
 
 
-def grey(text, *, callback_data=None, url=None, **kw):
-    """Neutral — back, info, disabled-looking."""
-    return _mk(text, _DEFAULT, callback_data=callback_data, url=url, **kw) \
-        if url else _mk(text, _DEFAULT, callback_data=callback_data, **kw)
+def grey(text, **kw):
+    """Neutral — back, info."""
+    return _mk(text, ButtonStyle.DEFAULT if STYLES_OK else None, **kw)
 
 
 def plain(text, **kw):
     """Bilkul plain button — koi style nahi."""
-    return IKB(text, **kw)
+    kw = {k: v for k, v in kw.items() if v is not None}
+    return InlineKeyboardButton(text, **kw)
 
 
 def set_colors(enabled: bool):
-    """Panel ke toggle se colours on/off."""
+    """Panel toggle se colours on/off."""
     global COLORS_ENABLED
     COLORS_ENABLED = bool(enabled)
 
