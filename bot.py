@@ -9,7 +9,12 @@ import time
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
-from pyrogram.errors import AuthKeyUnregistered, SessionRevoked
+from pyrogram.errors import (
+    AccessTokenExpired,
+    AccessTokenInvalid,
+    AuthKeyUnregistered,
+    SessionRevoked,
+)
 
 import config
 
@@ -47,20 +52,53 @@ class FileStoreBot(Client):
         missing = config.validate()
         if missing:
             log.error("❌ Missing env vars: %s", ", ".join(missing))
+            log.error("   Railway -> Variables me ye set karo.")
+            sys.exit(1)
+
+        problem = config.token_problem()
+        if problem:
+            log.error("❌ BOT_TOKEN me dikkat: %s", problem)
+            log.error("   @BotFather se sahi token lo aur Railway me paste karo.")
             sys.exit(1)
 
         try:
             await super().start(*args, **kwargs)
+
+        except (AccessTokenExpired, AccessTokenInvalid) as e:
+            tok = config.BOT_TOKEN or ""
+            masked = f"{tok[:12]}…{tok[-4:]}" if len(tok) > 18 else "(khaali)"
+            log.error("")
+            log.error("=" * 62)
+            log.error("❌  BOT_TOKEN GALAT YA EXPIRED HAI  (%s)", type(e).__name__)
+            log.error("=" * 62)
+            log.error("Railway me jo token hai: %s", masked)
+            log.error("")
+            log.error("Ye code ka error NAHI hai. Token revoke ho chuka hai")
+            log.error("ya galat paste hua hai. Theek karne ke liye:")
+            log.error("")
+            log.error("  1. @BotFather kholo  ->  /mybots  ->  apna bot")
+            log.error("  2. API Token -> Revoke current token")
+            log.error("  3. NAYA token copy karo (pura, space ke bina)")
+            log.error("  4. Railway -> Variables -> BOT_TOKEN update karo")
+            log.error("  5. Redeploy")
+            log.error("")
+            log.error("Dhyan: token ke aage/peeche space ya quotes nahi hone chahiye.")
+            log.error("=" * 62)
+            sys.exit(1)
+
         except (SessionRevoked, AuthKeyUnregistered):
             # purani session file kharab — delete karke dobara login
             import glob
+            removed = 0
             for f in glob.glob(os.path.join(config.SESSION_DIR, "*.session*")):
                 try:
                     os.remove(f)
+                    removed += 1
                     log.warning("purani session hata di: %s", f)
                 except OSError:
                     pass
-            log.error("❌ session revoked — restart karo, nayi session banegi")
+            log.error("❌ session revoked — %d file hatai. Bot restart karo, "
+                      "nayi session apne aap ban jayegi.", removed)
             sys.exit(1)
 
         me = await self.get_me()

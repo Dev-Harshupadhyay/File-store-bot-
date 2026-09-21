@@ -78,3 +78,30 @@ def validate():
         "OWNER_ID": OWNER_ID, "DB_CHANNEL": DB_CHANNEL,
     }.items() if not v]
     return missing
+
+
+def token_problem():
+    """BOT_TOKEN ka format check — galat ho to reason string return karta hai."""
+    tok = BOT_TOKEN
+    if not tok:
+        return "BOT_TOKEN set hi nahi hai"
+    if tok != tok.strip():
+        return "token ke aage/peeche space hai"
+    if tok[0] in "\"'" or tok[-1] in "\"'":
+        return "token ke aas-paas quotes hain — hata do"
+    if ":" not in tok:
+        return "token me ':' nahi hai (format: 123456:AAE...)"
+    head, _, tail = tok.partition(":")
+    if not head.isdigit():
+        return f"token ka pehla hissa number nahi hai: {head[:20]}"
+    if len(tail) < 30:
+        return "token adhura lag raha hai (bahut chhota)"
+    return None
+
+
+def bot_id():
+    """Token se bot ki user id nikaalo."""
+    try:
+        return int(BOT_TOKEN.split(":")[0])
+    except (ValueError, IndexError, AttributeError):
+        return 0
