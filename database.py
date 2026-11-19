@@ -325,3 +325,83 @@ def db_size():
         return os.path.getsize(config.DB_PATH)
     except OSError:
         return 0
+
+
+USER_FIELDS = ('user_id', 'name', 'username', 'joined', 'banned', 'ban_reason',
+               'files_got', 'last_seen')
+
+
+def export_users():
+    return {'format': 'filestore-users-v1', 'users': [dict(row) for row in
+            _q('SELECT * FROM users ORDER BY user_id', fetch='all')]}
+
+
+def restore_users(payload):
+    if (not isinstance(payload, dict) or payload.get('format') != 'filestore-users-v1'
+            or not isinstance(payload.get('users'), list)):
+        raise ValueError('Invalid user backup')
+    rows = []
+    for row in payload['users']:
+        if not isinstance(row, dict) or not all(key in row for key in USER_FIELDS):
+            raise ValueError('Invalid user row')
+        for key in ('user_id', 'joined', 'banned', 'files_got', 'last_seen'):
+            if type(row[key]) is not int or not 0 <= row[key] < 2**63:
+                raise ValueError('Invalid numeric field')
+        if not row['user_id'] or row['banned'] not in (0, 1):
+            raise ValueError('Invalid user ID or ban flag')
+        if any(row[k] is not None and not isinstance(row[k], str)
+               for k in ('name', 'username', 'ban_reason')):
+            raise ValueError('Invalid text field')
+        rows.append(tuple(row[key] for key in USER_FIELDS))
+    with _lock, _conn:
+        cur = _conn.executemany(
+            'INSERT INTO users (' + ','.join(USER_FIELDS) + ') VALUES (?,?,?,?,?,?,?,?) '
+            'ON CONFLICT(user_id) DO NOTHING', rows)
+        return cur.rowcount
+
+
+def snapshot(path):
+    with _lock:
+        target = sqlite3.connect(path)
+        try:
+            _conn.backup(target)
+        finally:
+            target.close()
+
+
+def auto_delete_seconds():
+    return max(0, get_int('auto_delete', 1800)) if get_bool('auto_delete_on', True) else 0
+
+
+def set_auto_delete(seconds):
+    if not 0 <= seconds <= 86400:
+        raise ValueError('Choose 0 to 86400 seconds')
+    with _lock, _conn:
+        _conn.executemany('INSERT INTO settings(key,value) VALUES(?,?) '
+                          'ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+                          [('auto_delete', str(seconds)), ('auto_delete_on', str(int(seconds > 0)))])
+
+
+_q('''CREATE TABLE IF NOT EXISTS delete_jobs (
+    id INTEGER PRIMARY KEY, chat_id INTEGER NOT NULL, msg_ids TEXT NOT NULL,
+    due INTEGER NOT NULL, link TEXT NOT NULL, count INTEGER NOT NULL
+)''')
+_q('CREATE INDEX IF NOT EXISTS delete_jobs_due ON delete_jobs(due)')
+
+
+def queue_delete(chat_id, msg_ids, delay, link, count):
+    _q('INSERT INTO delete_jobs(chat_id,msg_ids,due,link,count) VALUES(?,?,?,?,?)',
+       (chat_id, json.dumps(msg_ids), now() + delay, link, count))
+
+
+def due_deletes():
+    return _q('SELECT * FROM delete_jobs WHERE due<=? ORDER BY due LIMIT 25',
+              (now(),), fetch='all')
+
+
+def finish_delete(job_id):
+    _q('DELETE FROM delete_jobs WHERE id=?', (job_id,))
+
+
+def retry_delete(job_id, delay):
+    _q('UPDATE delete_jobs SET due=? WHERE id=?', (now() + delay, job_id))

@@ -2,6 +2,8 @@
 Harsh File Store Bot — main client
 Railway + SQLite volume ke liye banaya gaya.
 """
+import asyncio
+from contextlib import suppress
 import logging
 import os
 import sys
@@ -46,6 +48,7 @@ class FileStoreBot(Client):
         self.username = None
         self.batch_cache = {}   # user_id -> [msg_ids]  (batch mode buffer)
         self.await_input = {}   # user_id -> action string (panel text input)
+        self.delete_task = None
         self.web_runner = None  # aiohttp health server
 
     async def start(self, *args, **kwargs):
@@ -142,6 +145,11 @@ class FileStoreBot(Client):
         #    jata hai — isliye har start pe dobara daal dete hain) ──
         await self._seed_fsub()
 
+        from handlers.backup import startup_prompt
+        from handlers.start import delete_worker
+        self.delete_task = asyncio.create_task(delete_worker(self))
+        await startup_prompt(self)
+
         log.info("🤖 @%s live · data dir: %s", self.username, config.DATA_DIR)
 
         # startup log sirf tab jab LOG_STARTUP=true ho (default off)
@@ -209,6 +217,10 @@ class FileStoreBot(Client):
             log.info("⚑ force sub ON · %d channel(s)", added)
 
     async def stop(self, *args, **kwargs):
+        if self.delete_task is not None:
+            self.delete_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self.delete_task
         try:
             if getattr(self, "web_runner", None):
                 await self.web_runner.cleanup()

@@ -119,16 +119,31 @@ Bas ho gaya. Bot ko `/start` bhejo.
 | `/addadmin 12345` | Naya admin (sirf owner) |
 | `/rmadmin 12345` | Admin hatao (sirf owner) |
 | `/admins` | Admin list |
-| `/autodel 1800` | Auto-delete time (seconds, 0 = off) |
+| `/autodel 30m` | Auto-delete time (`1800`, `30m`, `1h`, `off`; max 24h) |
 | `/addfsub -100xxx` | Force-sub channel add (koi bhi channel) |
 | `/addfsub @user` | Public channel username se |
 | `/addfsub -100xxx request` | Join-request mode |
 | `/fsublist` | Force-sub channels list |
 | `/delfsub -100xxx` | Force-sub channel hatao |
-| `/backup` | DB file bhejo |
+| `/backup` | User backup JSON (sirf owner) |
+| `/dbbackup` | Full SQLite snapshot (sirf owner) |
 | `/revoke <code>` | Link band karo |
 | `/restart` | Bot restart |
 | `/id` | ID nikalo |
+
+### Admin, Auto-delete aur Backup
+
+- Owner: `/panel` → **Add Admin** → user ID bhejo, ya `/addadmin 12345`.
+  `/rmadmin 12345` se added admin hatao. Env `ADMINS` wale Railway se manage hote hain.
+- `/panel` → **Auto Delete** → **30 min**, koi aur preset, ya **Off**.
+  Changes naye deliveries par lagte hain; original storage-channel messages delete nahi hote.
+  Pending deletions restart ke baad resume hoti hain agar SQLite volume safe hai.
+- Owner: `/panel` → **User Backup** ya `/backup` se sab registered users (including banned) ki JSON file private DM mein milegi.
+  Har startup par owner ko **Yes / No** prompt milega. DM ke liye owner ko bot par pehle `/start` karna hoga.
+- Restore: owner bot ke private chat mein original `filestore-users-*.json` file bheje (20 MB max), phir **Yes** dabaye.
+  Sirf missing users import hote hain; existing records, admins, settings aur batches replace nahi hote.
+  JSON mein user data hai, ise private rakho. Full DB ke liye `/dbbackup` alag hai;
+  SQLite snapshot mein video bytes nahi hote, videos Telegram storage channel mein rehte hain.
 
 ### User (koi bhi)
 | Command | Kaam |

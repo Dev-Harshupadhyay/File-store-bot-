@@ -14,7 +14,7 @@ import config
 import database as db
 from utils import keyboards as kb
 from utils import texts as T
-from utils.helpers import human_size, human_time, no_preview, parse_target, uptime_since
+from utils.helpers import parse_delete_delay, human_size, human_time, no_preview, parse_target, uptime_since
 
 log = logging.getLogger("admin")
 
@@ -114,7 +114,7 @@ async def banned_cmd(client, message):
 @Client.on_message(filters.command("addadmin") & filters.private & OWNER)
 async def addadmin_cmd(client, message):
     uid, _ = parse_target(message.text, message)
-    if not uid:
+    if not uid or not 0 < uid < 2**63:
         return await message.reply("ᴜsᴀɢᴇ: <code>/addadmin &lt;user_id&gt;</code>")
     db.add_admin(uid, message.from_user.id)
     db.log(message.from_user.id, "add_admin", str(uid))
@@ -132,6 +132,8 @@ async def rmadmin_cmd(client, message):
         return await message.reply("ᴜsᴀɢᴇ: <code>/rmadmin &lt;user_id&gt;</code>")
     if uid == config.OWNER_ID:
         return await message.reply("✘ ᴏᴡɴᴇʀ ᴋᴏ ʜᴀᴛᴀ ɴᴀʜɪ sᴀᴋᴛᴇ.")
+    if uid in config.ADMINS:
+        return await message.reply("Configured admin: remove from Railway ADMINS first.")
     db.rm_admin(uid)
     db.log(message.from_user.id, "rm_admin", str(uid))
     await message.reply(f"✓ <code>{uid}</code> ᴀᴅᴍɪɴ sᴇ ʜᴀᴛᴀ ᴅɪʏᴀ.")
@@ -151,34 +153,32 @@ async def admins_cmd(client, message):
 @Client.on_message(filters.command("autodel") & filters.private & ADMIN)
 async def autodel_cmd(client, message):
     parts = message.text.split(maxsplit=1)
-    if len(parts) < 2 or not parts[1].strip().isdigit():
-        cur = db.get_int("auto_delete", 1800)
+    if len(parts) == 1:
         return await message.reply(
-            f"❖ ᴀʙʜɪ: <code>{human_time(cur)}</code>\n"
-            f"ᴜsᴀɢᴇ: <code>/autodel 1800</code> (sᴇᴄᴏɴᴅs, 0 = ᴏғғ)",
+            f"Current: {human_time(db.auto_delete_seconds())}\n"
+            "Examples: /autodel 1800, /autodel 30m, /autodel 1h, /autodel off",
             reply_markup=kb.autodel_kb())
-    val = int(parts[1].strip())
-    db.set("auto_delete", val)
-    db.set("auto_delete_on", "1" if val > 0 else "0")
-    db.log(message.from_user.id, "autodel", str(val))
-    await message.reply(f"✓ ᴀᴜᴛᴏ-ᴅᴇʟᴇᴛᴇ: <code>{human_time(val)}</code>")
-
-
-@Client.on_message(filters.command("backup") & filters.private & OWNER)
-async def backup_cmd(client, message):
-    m = await message.reply("⏳ ʙᴀᴄᴋᴜᴘ ʙᴀɴᴀ ʀᴀʜᴀ ʜᴏᴏɴ...")
     try:
-        await message.reply_document(
-            config.DB_PATH,
-            caption=f"💾 <b>ᴅᴀᴛᴀʙᴀsᴇ ʙᴀᴄᴋᴜᴘ</b>\n"
-                    f"◉ ᴜsᴇʀs: <code>{db.count_users()}</code>\n"
-                    f"◆ ʙᴀᴛᴄʜᴇs: <code>{db.count_batches()}</code>\n"
-                    f"📦 sɪᴢᴇ: <code>{human_size(db.db_size())}</code>",
-            file_name=f"filestore-backup-{int(time.time())}.db",
-        )
-        await m.delete()
-    except Exception as e:
-        await m.edit(f"✘ ʙᴀᴄᴋᴜᴘ ғᴀɪʟ: <code>{e}</code>")
+        val = parse_delete_delay(parts[1])
+        db.set_auto_delete(val)
+    except ValueError:
+        return await message.reply("Use seconds, 30m, 1h, or off (maximum 24 hours).")
+    db.log(message.from_user.id, "autodel", str(val))
+    await message.reply(f"Auto-delete for new deliveries: {human_time(val)}")
+
+
+@Client.on_message(filters.command("dbbackup") & filters.private & OWNER)
+async def backup_db_cmd(client, message):
+    import tempfile
+    from pathlib import Path
+
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "filestore.db"
+            await asyncio.to_thread(db.snapshot, path)
+            await message.reply_document(str(path), caption="Full SQLite snapshot (keep private).")
+    except Exception:
+        await message.reply("Database backup failed. Try again.")
 
 
 # ───────────────────────────── BROADCAST ─────────────────────────────
