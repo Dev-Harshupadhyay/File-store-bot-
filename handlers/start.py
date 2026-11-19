@@ -2,6 +2,7 @@
 /start — user side: link open karo -> files milti hain -> 30 min me auto delete.
 """
 import asyncio
+import json
 import logging
 
 from pyrogram import Client, filters
@@ -36,24 +37,33 @@ async def _log_new_user(client, user):
         log.warning("new user log fail: %s", e)
 
 
-async def _auto_delete(client, chat_id, msg_ids, delay, count, link=""):
-    """Delay ke baad saari files delete + notice."""
-    await asyncio.sleep(delay)
-    deleted = 0
-    for mid in msg_ids:
-        try:
-            await client.delete_messages(chat_id, mid)
-            deleted += 1
-        except Exception:
-            pass
-    try:
-        await client.send_message(
-            chat_id,
-            T.DELETED.format(line=T.LINE, n=deleted),
-            reply_markup=kb.get_again_kb(link),
-        )
-    except Exception:
-        pass
+async def delete_worker(client):
+    """Resume queued delivery deletions after a restart."""
+    while True:
+        for job in db.due_deletes():
+            try:
+                ids = json.loads(job["msg_ids"])
+                for start in range(0, len(ids), 100):
+                    await client.delete_messages(job["chat_id"], ids[start:start + 100])
+            except FloodWait as exc:
+                db.retry_delete(job["id"], max(1, int(exc.value)))
+                continue
+            except (OSError, TimeoutError):
+                db.retry_delete(job["id"], 30)
+                continue
+            except Exception:
+                log.warning("Could not delete delivery job %s", job["id"], exc_info=True)
+                db.finish_delete(job["id"])
+                continue
+            db.finish_delete(job["id"])
+            try:
+                await client.send_message(
+                    job["chat_id"], T.DELETED.format(line=T.LINE, n=job["count"]),
+                    reply_markup=kb.get_again_kb(job["link"]),
+                )
+            except Exception:
+                pass
+        await asyncio.sleep(2)
 
 
 async def deliver_batch(client, message, code, override_user=None):
@@ -82,7 +92,7 @@ async def deliver_batch(client, message, code, override_user=None):
     ids = batch["msg_ids"]
     total = len(ids)
     protect = bool(batch["protect"]) or db.get_bool("protect")
-    delay = db.get_int("auto_delete", 1800) if db.get_bool("auto_delete_on", True) else 0
+    delay = db.auto_delete_seconds()
 
     status = await say(T.SENDING.format(n=total, bar=progress_bar(0, total)))
 
@@ -126,17 +136,19 @@ async def deliver_batch(client, message, code, override_user=None):
         pass
 
     if delay > 0 and sent_ids:
-        warn = await client.send_message(
-            user_id,
-            T.DELETE_WARN.format(line=T.LINE, n=len(sent_ids), ad=human_time(delay)),
-            reply_markup=kb.delete_warn_kb(),
-            **no_preview(),
-        )
+        delete_ids = list(sent_ids)
+        try:
+            warn = await client.send_message(
+                user_id,
+                T.DELETE_WARN.format(line=T.LINE, n=len(sent_ids), ad=human_time(delay)),
+                reply_markup=kb.delete_warn_kb(),
+                **no_preview(),
+            )
+            delete_ids.append(warn.id)
+        except Exception:
+            log.warning("Could not send auto-delete warning to %s", user_id)
         again = f"https://t.me/{client.username}?start={code}"
-        asyncio.create_task(
-            _auto_delete(client, user_id, sent_ids + [warn.id], delay,
-                         len(sent_ids), again)
-        )
+        db.queue_delete(user_id, delete_ids, delay, again, len(sent_ids))
 
     if config.LOG_FILES:
         try:

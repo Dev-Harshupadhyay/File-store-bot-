@@ -54,7 +54,7 @@ def admin_panel(user_id=0):
         [blue(f"⚑ {tc('Force Sub')}", callback_data="ap:fsub"),
          blue(f"◉ {tc('Audit Log')}", callback_data="ap:logs")],
 
-        [green(f"💾 {tc('Backup Db')}", callback_data="ap:backup"),
+        [green(f"💾 {tc('User Backup')}", callback_data="ap:backup"),
          red(f"▣ {tc('Security')}", callback_data="ap:sec")],
 
         [red(f"⚠️ {tc('Maintenance')}", callback_data="ap:maint"),
@@ -74,6 +74,9 @@ def admin_panel(user_id=0):
 
         [red(f"✕ {tc('Close')}", callback_data="ap:close")],
     ]
+    if not db.is_owner(user_id):
+        rows = [[b for b in row if b.callback_data not in {"ap:addadmin", "ap:backup"}]
+                for row in rows]
     return IKM(rows)
 
 
@@ -106,7 +109,7 @@ def files_kb():
 
 def autodel_kb():
     _sync_colors()
-    cur = db.get_int("auto_delete", 1800)
+    cur = db.auto_delete_seconds()
     opts = [("10 ᴍɪɴ", 600), ("30 ᴍɪɴ", 1800), ("1 ʜᴏᴜʀ", 3600),
             ("6 ʜᴏᴜʀs", 21600), ("24 ʜᴏᴜʀs", 86400), ("ᴏғғ", 0)]
     rows, line = [], []

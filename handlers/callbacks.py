@@ -135,6 +135,12 @@ async def toggle_cb(client, q: CallbackQuery):
     if not await _guard(q):
         return
     key = q.data.split(":", 1)[1]
+    if key not in {"auto_delete_on", "protect", "force_sub", "maintenance", "colors"}:
+        return await q.answer("Invalid toggle")
+    if key == "auto_delete_on" and not db.get_int("auto_delete", 1800):
+        db.set_auto_delete(1800)
+        await q.answer("Auto-delete → 30 min")
+        return await _edit(q, panel_text(client), kb.admin_panel(q.from_user.id))
     default = True if key == "auto_delete_on" else False
     new = db.toggle(key, default)
     db.log(q.from_user.id, "toggle", f"{key}={new}")
@@ -146,13 +152,17 @@ async def toggle_cb(client, q: CallbackQuery):
 async def set_cb(client, q: CallbackQuery):
     if not await _guard(q):
         return
-    _, key, val = q.data.split(":", 2)
-    db.set(key, val)
-    if key == "auto_delete":
-        db.set("auto_delete_on", "1" if int(val) > 0 else "0")
-        await q.answer(f"✓ {human_time(int(val))}")
-        return await _edit(q, autodel_text(), kb.autodel_kb())
-    await q.answer("✓ sᴀᴠᴇᴅ")
+    parts = q.data.split(":", 2)
+    if len(parts) != 3 or parts[1] != "auto_delete":
+        return await q.answer("Invalid setting")
+    try:
+        val = int(parts[2])
+        db.set_auto_delete(val)
+    except ValueError:
+        return await q.answer("Invalid delay")
+    db.log(q.from_user.id, "autodel", str(val))
+    await q.answer(f"✓ {human_time(val)}")
+    await _edit(q, autodel_text(), kb.autodel_kb())
 
 
 def autodel_text():
@@ -170,7 +180,10 @@ async def adm_rm_cb(client, q: CallbackQuery):
     if not db.is_owner(q.from_user.id):
         return await q.answer("✘ sɪʀғ ᴏᴡɴᴇʀ", show_alert=True)
     uid = int(q.data.split(":")[2])
+    if uid in config.ADMINS:
+        return await q.answer("Configured admin: edit Railway variables", show_alert=True)
     db.rm_admin(uid)
+    db.log(q.from_user.id, "rm_admin", str(uid))
     await q.answer(f"✓ {uid} removed")
     await _edit(q, admins_text(), kb.admins_kb())
 
@@ -307,6 +320,8 @@ async def panel_cb(client, q: CallbackQuery):
         await _edit(q, admins_text(), kb.admins_kb())
 
     elif action == "addadmin":
+        if not db.is_owner(uid):
+            return await q.answer("Owner only", show_alert=True)
         client.await_input[uid] = "addadmin"
         await _edit(q, f"<b>⊕ ᴀᴅᴅ ᴀᴅᴍɪɴ</b>\n{T.LINE}\n"
                        f"ᴀʙ ᴜsᴇʀ ɪᴅ ʙʜᴇᴊᴏ (sɪʀғ ɴᴜᴍʙᴇʀ).\n"
@@ -336,14 +351,14 @@ async def panel_cb(client, q: CallbackQuery):
         await _edit(q, txt, kb.back(extra=[[red("🗑 ᴄʟᴇᴀʀ ʟᴏɢs", callback_data="ok:clearlogs:")]]))
 
     elif action == "backup":
-        await q.answer("⏳ ʙᴀᴄᴋᴜᴘ...")
+        if not db.is_owner(uid):
+            return await q.answer("Owner only", show_alert=True)
+        from handlers.backup import send_user_backup
+        await q.answer("Preparing backup…")
         try:
-            await q.message.reply_document(
-                config.DB_PATH,
-                caption=f"💾 ʙᴀᴄᴋᴜᴘ · {human_size(db.db_size())}",
-                file_name=f"filestore-{int(time.time())}.db")
-        except Exception as e:
-            await q.answer(f"✘ {e}", show_alert=True)
+            await send_user_backup(client)
+        except Exception:
+            await q.message.reply("Backup failed. Try /backup again.")
 
     elif action == "sec":
         txt = (f"<b>▣ sᴇᴄᴜʀɪᴛʏ</b>\n{T.LINE}\n"
@@ -420,8 +435,12 @@ async def await_input_handler(client, message):
     text = (message.text or "").strip()
 
     if mode == "addadmin":
+        if not db.is_owner(uid):
+            return
         try:
             new_id = int(text)
+            if not 0 < new_id < 2**63:
+                raise ValueError
         except ValueError:
             return await message.reply("✘ ɢᴀʟᴀᴛ ɪᴅ.")
         db.add_admin(new_id, uid)

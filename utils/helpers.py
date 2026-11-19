@@ -114,3 +114,18 @@ def no_preview():
     disable_web_page_preview. Ye dono handle kar leta hai.
     """
     return dict(_NO_PREVIEW)
+
+
+def parse_delete_delay(value):
+    import re
+    value = value.strip().lower()
+    if value == "off":
+        return 0
+    match = re.fullmatch(r"([0-9]{1,5})([smh]?)", value)
+    if not match:
+        raise ValueError("Invalid delay")
+    number, unit = match.groups()
+    seconds = int(number) * {"": 1, "s": 1, "m": 60, "h": 3600}[unit]
+    if seconds > 86400:
+        raise ValueError("Delay exceeds 24 hours")
+    return seconds
